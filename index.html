@@ -21,6 +21,8 @@
     <link rel="stylesheet" href="css/fonts.css">
 
     <!-- Design System Soberano Systekna (100% Vanilla CSS / Zero-Tailwind) -->
+    <!-- Design system comum dos projetos 8.X (cópia de ../_design-system/, não editar aqui) -->
+    <link rel="stylesheet" href="vendor/stk-gov/stk-gov.css">
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Chart.js 4.4.1 local (cópia do pacote npm, SHA-256 conferido com o jsDelivr) -->
@@ -97,32 +99,32 @@
     <div class="app-main-layout">
 
         <!-- BACKDROP TRANSLÚCIDO PARA MOBILE DRAWER -->
-        <div id="sidebarBackdrop" class="sidebar-backdrop hidden" aria-hidden="true"></div>
+        <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true" hidden></div>
 
         <!-- BARRA LATERAL VERTICAL RESPONSIVA (MENU DE NAVEGAÇÃO DOS MÓDULOS) -->
         <aside id="appSidebar" class="app-sidebar" aria-label="Navegação Lateral">
             <div class="sidebar-top-section">
                 <!-- Cabeçalho do Drawer Mobile (para fechar) -->
-                <div id="sidebarDrawerHeader" class="sidebar-drawer-header flex items-center justify-between pb-3 border-b border-borderDark/60 lg:hidden">
-                    <div class="flex items-center gap-2">
+                <div id="sidebarDrawerHeader" class="sidebar-drawer-header">
+                    <div class="sidebar-drawer-brand">
                         <img class="app-logo app-logo-sm" src="icons/logo-96.png" alt="" width="24" height="24">
-                        <span class="font-sans text-white">Painel 2026</span>
+                        <span>Painel 2026</span>
                     </div>
-                    <button id="btnCloseSidebar" type="button" class="text-slate-400 hover:text-white p-1 rounded-md transition" title="Fechar menu">
+                    <button id="btnCloseSidebar" type="button" class="btn-sidebar-close" title="Fechar menu" aria-label="Fechar menu">
                         <span id="iconCloseSidebar"></span>
                     </button>
                 </div>
 
                 <!-- Cabeçalho Desktop com Título da Seção e Alternância Rápida -->
-                <div id="sidebarDesktopHeader" class="sidebar-desktop-header flex items-center justify-between pb-2 border-b border-borderDark/40">
-                    <span class="sidebar-title-text text-[10px] font-mono font-bold uppercase text-slate-500 tracking-wider px-1">
+                <div id="sidebarDesktopHeader" class="sidebar-desktop-header">
+                    <span class="sidebar-title-text">
                         Análises
                     </span>
                 </div>
 
                 <!-- Navegação Vertical (Menu dos Módulos Analíticos - SOMENTE O TÍTULO) -->
                 <nav class="sidebar-nav-list" aria-label="Módulos Analíticos" role="tablist" aria-orientation="vertical">
-                    <button id="tabBtnUFs" type="button" class="sidebar-nav-item active-top-tab" role="tab" aria-controls="tabUFs" aria-selected="true" tabindex="0" title="Tabela Federativa">
+                    <button id="tabBtnUFs" type="button" class="sidebar-nav-item active" role="tab" aria-controls="tabUFs" aria-selected="true" tabindex="0" title="Tabela Federativa">
                         <span class="nav-item-inner">
                             <span class="nav-icon" id="iconTabUFs"></span>
                             <span class="nav-label">Tabela Federativa</span>

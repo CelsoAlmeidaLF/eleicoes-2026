@@ -10,6 +10,7 @@ import { ElectionChartAdapter } from './infrastructure/charts/ElectionChartAdapt
 import { BrazilMapAdapter } from './infrastructure/maps/BrazilMapAdapter.js';
 import { PwaAdapter } from './infrastructure/pwa/PwaAdapter.js';
 import { ElectionUIController } from './ui/ElectionUIController.js';
+import { StkGovShell } from '../vendor/stk-gov/stk-gov-shell.js';
 
 export class Program {
   static main() {
@@ -26,7 +27,10 @@ export class Program {
       const exportService = new ExportService();
 
       // 3. Camada de UI / Apresentação
-      const uiController = new ElectionUIController(analysisService, exportService, chartAdapter, mapAdapter, pwaAdapter);
+      // Shell comum dos projetos 8.X; as abas continuam com o controlador (URL, teclado, renderização)
+      const shell = new StkGovShell({ app: 'painel2026', gerenciarAbas: false, chaveRecolhida: 'stk_sidebar_collapsed' });
+      shell.iniciar();
+      const uiController = new ElectionUIController(analysisService, exportService, chartAdapter, mapAdapter, pwaAdapter, shell);
 
       // 4. Inicialização do Ciclo de Vida
       uiController.init();

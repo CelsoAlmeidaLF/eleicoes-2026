@@ -40,8 +40,9 @@ export class ElectionUIController {
    * @param {import('../application/services/ExportService.js').ExportService} exportService
    * @param {import('../infrastructure/charts/ElectionChartAdapter.js').ElectionChartAdapter} chartAdapter
    */
-  constructor(analysisService, exportService, chartAdapter, mapAdapter = null, pwaAdapter = null) {
+  constructor(analysisService, exportService, chartAdapter, mapAdapter = null, pwaAdapter = null, shell = null) {
     this._service = analysisService;
+    this._shell = shell; // StkGovShell (design system comum): botão de menu, gaveta e barra recolhida
     this._pwa = pwaAdapter;
     this._export = exportService;
     this._charts = chartAdapter;
@@ -419,43 +420,7 @@ export class ElectionUIController {
   }
 
   _bindEvents() {
-    // Controle Unificado da Barra Lateral (Mobile Drawer & Desktop Collapse)
-    const sidebar = document.getElementById('appSidebar');
-    const backdrop = document.getElementById('sidebarBackdrop');
-    const btnClose = document.getElementById('btnCloseSidebar');
-    const btnToggle = document.getElementById('btnToggleSidebar');
-
-    const toggleSidebar = () => {
-      if (window.innerWidth < 1024) {
-        // Mobile / Tablet (<1024px): Abre e fecha a gaveta lateral com backdrop
-        const isOpen = sidebar?.classList.toggle('sidebar-open');
-        if (isOpen) {
-          backdrop?.classList.remove('hidden');
-        } else {
-          backdrop?.classList.add('hidden');
-        }
-      } else {
-        // Desktop (>=1024px): Diminui e aumenta a barra lateral
-        sidebar?.classList.remove('sidebar-open');
-        backdrop?.classList.add('hidden');
-        const isCollapsed = sidebar?.classList.toggle('sidebar-collapsed');
-        localStorage.setItem('stk_sidebar_collapsed', isCollapsed ? 'true' : 'false');
-      }
-    };
-
-    const closeSidebar = () => {
-      sidebar?.classList.remove('sidebar-open');
-      backdrop?.classList.add('hidden');
-    };
-
-    btnToggle?.addEventListener('click', toggleSidebar);
-    btnClose?.addEventListener('click', closeSidebar);
-    backdrop?.addEventListener('click', closeSidebar);
-
-    // Restaurar estado salvo de diminuir/aumentar no desktop
-    if (window.innerWidth >= 1024 && localStorage.getItem('stk_sidebar_collapsed') === 'true') {
-      sidebar?.classList.add('sidebar-collapsed');
-    }
+    // Botão de menu, gaveta, fundo escuro, Esc e barra recolhida: StkGovShell (vendor/stk-gov), iniciado no Program
 
     // Alternância de Turnos
     document.getElementById('btnTurn1')?.addEventListener('click', () => { this.updateTurn(1); this._writeUrl(); });
@@ -967,9 +932,8 @@ export class ElectionUIController {
       if (el) el.classList.toggle('hidden', t !== tabId);
     });
 
-    // Fecha a barra lateral no mobile se estiver aberta
-    document.getElementById('appSidebar')?.classList.remove('sidebar-open');
-    document.getElementById('sidebarBackdrop')?.classList.add('hidden');
+    // Fecha a gaveta (tablet e celular) se estiver aberta
+    this._shell?.fecharGaveta(false);
 
     const btnMap = {
       tabUFs: 'tabBtnUFs',
@@ -982,7 +946,7 @@ export class ElectionUIController {
       const b = document.getElementById(btnId);
       if (b) {
         if (t === tabId) {
-          b.className = 'sidebar-nav-item active-top-tab';
+          b.className = 'sidebar-nav-item active';
         } else {
           b.className = 'sidebar-nav-item';
         }
