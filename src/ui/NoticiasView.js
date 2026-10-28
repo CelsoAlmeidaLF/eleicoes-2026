@@ -93,8 +93,8 @@ export class NoticiasView {
       <div class="news-veredito">
         <span class="news-veredito-icone">${getIcon('checkCircle')}</span>
         <div>
-          <strong>Nenhum indício de fraude foi encontrado.</strong>
-          <p>Testes de integridade do TSE e dos TREs, acompanhados pelo TCU, a missão da OEA, as agências de checagem e a auditoria deste painel nos arquivos do TSE chegam ao mesmo resultado: Lula reeleito por ${fmtInt(a.margem2)} votos. O ponto legítimo de crítica é de procedimento: a prorrogação da votação até as 19h, inédita, que não muda o resultado.</p>
+          <strong>Apuração oficial e cobertura da imprensa independente.</strong>
+          <p>Testes de integridade, fiscalização partidária, apurações da imprensa independente (Revista Oeste, Gazeta do Povo e Jovem Pan News) e a auditoria estatística deste painel indicam que a soma dos boletins de urna (BUs) impressos bate com a totalização: Lula reeleito por ${fmtInt(a.margem2)} votos. As críticas centrais documentadas pela oposição focam em arbitrariedades institucionais: a prorrogação inédita da votação até as 19h por decisão monocrática, o cerco à liberdade de expressão e a recusa histórica ao voto impresso auditável.</p>
         </div>
       </div>
       <div class="news-kpis">

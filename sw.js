@@ -9,7 +9,7 @@
  * - Requisições para outros domínios não passam pelo cache (o app não faz nenhuma). Zero telemetria.
  * Ao mudar a lista do shell, incremente CACHE_VERSION.
  */
-const CACHE_VERSION = 'stk-gov-br-v8';
+const CACHE_VERSION = 'stk-gov-br-v9';
 
 const APP_SHELL = [
   './',
