@@ -7,6 +7,8 @@ Entrada : data/tse_raw/votacao_candidato_munzona_2026_BR.csv
 Saída   : data/tse_2026_presidente.json
 Valida  : soma candidatos == votos válidos; comparecimento + abstenção == aptos;
           válidos + brancos + nulos == comparecimento.
+          Divergências conhecidas dos próprios arquivos do TSE (KNOWN_DIVERGENCES) são aceitas
+          só se o total for exatamente o registrado; qualquer outra quebra encerra com código 1.
 """
 import csv, json, sys, collections, hashlib
 from datetime import datetime, timezone
@@ -24,6 +26,16 @@ SOURCES = {
         "https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_candidato_munzona/votacao_candidato_munzona_2026.zip",
     "detalhe_votacao_secao_2026_BR.csv":
         "https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip",
+}
+
+# Divergências conhecidas entre os arquivos oficiais (não são erro do ETL). Chave: (tipo, turno, escopo)
+# -> soma nacional da diferença. Se o TSE republicar e o valor mudar, o script falha e pede revisão.
+KNOWN_DIVERGENCES = {
+    # detalhe_votacao_secao traz 5.246 válidos a mais que a soma de votos por candidato (1º turno)
+    ("validos_menos_candidatos", 1, "BR"): 5246,
+    # seções do exterior: 423 aptos sem comparecimento nem abstenção registrados, nos dois turnos
+    ("aptos_menos_comp_abst", 1, "ZZ"): 423,
+    ("aptos_menos_comp_abst", 2, "ZZ"): 423,
 }
 
 
@@ -73,6 +85,7 @@ for r in rd(RAW / "detalhe_votacao_secao_2026_BR.csv"):
     d["_nm"] = r["NM_MUNICIPIO"]
 
 errors = []
+divergences = collections.defaultdict(int)  # (tipo, turno, escopo) -> soma das diferenças
 
 keys = sorted(set(votes) | set(det))
 rows = []
@@ -86,9 +99,10 @@ for k in keys:
                lula=v.get("lula", 0), flavio=v.get("flavio", 0), outros=v.get("outros", 0))
     # Invariantes por linha (município/zona)
     if row["comparecimento"] + row["abstencoes"] != row["aptos"]:
-        errors.append(f"comp+abst!=aptos {k}")
+        diff = row["aptos"] - row["comparecimento"] - row["abstencoes"]
+        divergences[("aptos_menos_comp_abst", t, "ZZ" if uf == "ZZ" else "BR")] += diff
     if row["validos"] != v.get("validos_cand", 0):
-        errors.append(f"validos(detalhe)!={v.get('validos_cand', 0)} (candidatos) {k}")
+        divergences[("validos_menos_candidatos", t, "BR")] += row["validos"] - v.get("validos_cand", 0)
     if row["validos"] + row["brancos"] + row["nulos"] != row["comparecimento"]:
         errors.append(f"validos+brancos+nulos!=comparecimento {k}")
     rows.append(row)
@@ -133,6 +147,12 @@ doc = dict(
 OUT.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 print("linhas mun/zona:", len(rows), "| municipios:", doc["meta"]["total_municipios"], "| UFs:", len(ufs))
+for key in sorted(set(divergences) | set(KNOWN_DIVERGENCES)):
+    found, expected = divergences.get(key, 0), KNOWN_DIVERGENCES.get(key, 0)
+    status = "conhecida" if found == expected else "NOVA"
+    print(f"divergência {key}: {found} (esperado {expected}) [{status}]")
+    if found != expected:
+        errors.append(f"divergência {key}: {found}, esperado {expected}")
 print("erros de invariante:", len(errors))
 for e in errors[:15]:
     print("  ", e)

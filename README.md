@@ -23,7 +23,9 @@ python3 scripts/verify_sources.py --fetch-ibge   # baixa a tabela do IBGE e conf
 Os CSVs brutos do TSE (~390 MB) não estão no repositório: baixe os pacotes oficiais indicados em
 `data/provenance.json`, extraia em `data/tse_raw/` e rode o mesmo script.
 Divergência conhecida: no 1º turno, os votos válidos do arquivo de detalhe do TSE somam 5.246
-a mais que a soma dos candidatos; o painel usa os válidos oficiais.
+a mais que a soma dos candidatos; o painel usa os válidos oficiais. No exterior, 423 aptos (em cada
+turno) não aparecem nem como comparecimento nem como abstenção. `build_tse_dataset.py` aceita essas
+divergências apenas com os valores exatos (`KNOWN_DIVERGENCES`) e falha em qualquer outra.
 
 ## Rodar localmente
 
