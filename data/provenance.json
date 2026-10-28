@@ -1,0 +1,35 @@
+{
+  "geradoEm": "2026-10-28T12:54:35Z",
+  "tse": [
+    {
+      "arquivo": "votacao_candidato_munzona_2026_BR.csv",
+      "pacote": "https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_candidato_munzona/votacao_candidato_munzona_2026.zip",
+      "sha256": "de72c736ded808be34c32c592cfab77ee94702e659d73e855a615325983f8f82",
+      "bytes": 40138768,
+      "obtidoEm": "2026-10-27T22:44:18Z"
+    },
+    {
+      "arquivo": "detalhe_votacao_secao_2026_BR.csv",
+      "pacote": "https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip",
+      "sha256": "340aeb28851ac1291df464a22b4b5d350142dfa161e581a4178f6de250c37491",
+      "bytes": 351831261,
+      "obtidoEm": "2026-10-26T18:23:02Z"
+    }
+  ],
+  "tseDataset": {
+    "arquivo": "data/tse_2026_presidente.json",
+    "sha256": "fdb205326dcaaf5cccbff41b50ef452cd6d13c3bc0b2a8ad186acca1944646b6",
+    "geradoEm": "2026-10-28T12:44:34Z"
+  },
+  "ibge": {
+    "tabela": "SIDRA 9514, variável 93 (População residente, Censo 2022)",
+    "api": "https://servicodados.ibge.gov.br/api/v3/agregados/9514/periodos/2022/variaveis/93?localidades=N6[all]",
+    "sha256Tabela": "2405b0935f37900efc603e11c1455a2fc075d602439a6570a944cb59b5a41d27",
+    "municipios": 5570,
+    "sha256Arquivo": "0b64b1b4d8af968c7468f84f891a58c23f39c9ffa0d51d7c0216f9adc32ae096",
+    "obtidoEm": "2026-10-27T20:32:41Z"
+  },
+  "divergencias": {
+    "t1ValidosAcimaDaSomaDosCandidatos": 5246
+  }
+}

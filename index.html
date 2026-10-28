@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Painel analítico das Eleições 2026 com microdados oficiais do TSE e do Censo IBGE 2022.">
+
+    <!-- PWA: instalável como app, abre offline -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#1C1C1C">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Painel 2026">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Painel Analítico Eleições 2026: PT × PL (TSE & IBGE) | Systekna Governo</title>
+    <link rel="icon" type="image/png" href="icons/favicon-64.png">
+
+    <!-- Tipografia estilo Fluent: Segoe UI no Windows, Inter nos demais; IBM Plex Mono nas tabelas (arquivos locais) -->
+    <link rel="stylesheet" href="css/fonts.css">
+
+    <!-- Design System Soberano Systekna (100% Vanilla CSS / Zero-Tailwind) -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Chart.js 4.4.1 local (cópia do pacote npm, SHA-256 conferido com o jsDelivr) -->
+    <script src="vendor/chart.js-4.4.1/chart.umd.js"></script>
+</head>
+
+<body class="bg-panelDark text-slate-100 min-h-screen flex flex-col antialiased relative selection:bg-emerald-500/20 selection:text-emerald-300">
+
+    <!-- Aviso de falha crítica: estático para funcionar mesmo se os módulos JS não carregarem -->
+    <div id="appFatalError" class="app-fatal-error" role="alert" hidden>
+        <svg class="app-fatal-error-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" x2="12" y1="9" y2="13"></line><line x1="12" x2="12.01" y1="17" y2="17"></line></svg>
+        <div>
+            <strong>Não foi possível carregar o painel.</strong>
+            <p id="appFatalErrorDetail">Os scripts da aplicação não carregaram. Abra o site por um servidor local (ex.: <code>python3 -m http.server</code>) e recarregue a página.</p>
+        </div>
+    </div>
+
+    <!-- BARRA SUPERIOR GLOBAL (HEADER ENTERPRISE: BRAND, TURNO E EXPORTAÇÃO) -->
+    <header class="app-topbar" id="appTopbar">
+        <div class="topbar-inner">
+            <!-- Esquerda: Botão de Alternância da Barra Lateral + Logo + Título Brand -->
+            <div class="topbar-brand-section">
+                <button id="btnToggleSidebar" type="button" class="btn-hamburger" title="Alternar barra lateral" aria-label="Alternar barra lateral">
+                    <span id="iconToggleSidebar"></span>
+                </button>
+                <div class="topbar-divider"></div>
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <img class="app-logo" src="icons/logo-96.png" alt="" width="36" height="36">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-nowrap">
+                            <h1 class="brand-heading">PAINEL 2026</h1>
+                            <span class="badge-status badge-apurado">100%</span>
+                        </div>
+                        <p class="brand-subtext">Systekna Governo • Eleições TSE &amp; IBGE</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Direita: Seletor de Turno + Ações de Exportação e Compartilhar -->
+            <div class="topbar-controls-section">
+                <!-- Seletor de Turno de Apuração -->
+                <div class="topbar-turno-wrap">
+                    <span class="topbar-label hidden xl:inline-block">Turno:</span>
+                    <div class="segmented-control" role="group" aria-label="Turno de Apuração">
+                        <button id="btnTurn1" type="button" class="segmented-control-btn">
+                            1º Turno (04/Out)
+                        </button>
+                        <button id="btnTurn2" type="button" class="segmented-control-btn active">
+                            2º Turno (25/Out)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ações de Exportação e Compartilhamento -->
+                <div class="topbar-actions-wrap">
+                    <button id="btnInstallApp" type="button" class="action-btn action-btn-secondary" title="Instalar o painel como app" hidden>
+                        <span id="iconInstallApp"></span>
+                        <span class="action-btn-text">Instalar</span>
+                    </button>
+                    <button id="btnExportCsv" type="button" class="action-btn action-btn-secondary" title="Exportar dados em CSV">
+                        <span id="iconExportCsv"></span>
+                        <span class="action-btn-text">CSV</span>
+                    </button>
+                    <button id="btnShare" type="button" class="action-btn action-btn-primary" title="Compartilhar Painel">
+                        <span id="iconShare"></span>
+                        <span class="action-btn-text">Compartilhar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- LAYOUT DE TRABALHO: BARRA LATERAL VERTICAL + ÁREA DE CONTEÚDO -->
+    <div class="app-main-layout">
+
+        <!-- BACKDROP TRANSLÚCIDO PARA MOBILE DRAWER -->
+        <div id="sidebarBackdrop" class="sidebar-backdrop hidden" aria-hidden="true"></div>
+
+        <!-- BARRA LATERAL VERTICAL RESPONSIVA (MENU DE NAVEGAÇÃO DOS MÓDULOS) -->
+        <aside id="appSidebar" class="app-sidebar" aria-label="Navegação Lateral">
+            <div class="sidebar-top-section">
+                <!-- Cabeçalho do Drawer Mobile (para fechar) -->
+                <div id="sidebarDrawerHeader" class="sidebar-drawer-header flex items-center justify-between pb-3 border-b border-borderDark/60 lg:hidden">
+                    <div class="flex items-center gap-2">
+                        <img class="app-logo app-logo-sm" src="icons/logo-96.png" alt="" width="24" height="24">
+                        <span class="font-sans text-white">Painel 2026</span>
+                    </div>
+                    <button id="btnCloseSidebar" type="button" class="text-slate-400 hover:text-white p-1 rounded-md transition" title="Fechar menu">
+                        <span id="iconCloseSidebar"></span>
+                    </button>
+                </div>
+
+                <!-- Cabeçalho Desktop com Título da Seção e Alternância Rápida -->
+                <div id="sidebarDesktopHeader" class="sidebar-desktop-header flex items-center justify-between pb-2 border-b border-borderDark/40">
+                    <span class="sidebar-title-text text-[10px] font-mono font-bold uppercase text-slate-500 tracking-wider px-1">
+                        Análises
+                    </span>
+                </div>
+
+                <!-- Navegação Vertical (Menu dos Módulos Analíticos - SOMENTE O TÍTULO) -->
+                <nav class="sidebar-nav-list" aria-label="Módulos Analíticos" role="tablist" aria-orientation="vertical">
+                    <button id="tabBtnUFs" type="button" class="sidebar-nav-item active-top-tab" role="tab" aria-controls="tabUFs" aria-selected="true" tabindex="0" title="Tabela Federativa">
+                        <span class="nav-item-inner">
+                            <span class="nav-icon" id="iconTabUFs"></span>
+                            <span class="nav-label">Tabela Federativa</span>
+                        </span>
+                    </button>
+                    <button id="tabBtnMunicipios" type="button" class="sidebar-nav-item" role="tab" aria-controls="tabMunicipios" aria-selected="false" tabindex="-1" title="Consulta Municipal">
+                        <span class="nav-item-inner">
+                            <span class="nav-icon" id="iconTabMunis"></span>
+                            <span class="nav-label">Consulta Municipal</span>
+                        </span>
+                    </button>
+                    <button id="tabBtnDemografia" type="button" class="sidebar-nav-item" role="tab" aria-controls="tabDemografia" aria-selected="false" tabindex="-1" title="Correlação Demográfica">
+                        <span class="nav-item-inner">
+                            <span class="nav-icon" id="iconTabDemog"></span>
+                            <span class="nav-label">Correlação Demográfica</span>
+                        </span>
+                    </button>
+                    <button id="tabBtnMapa" type="button" class="sidebar-nav-item" role="tab" aria-controls="tabMapa" aria-selected="false" tabindex="-1" title="Mapa do Brasil">
+                        <span class="nav-item-inner">
+                            <span class="nav-icon" id="iconTabMapa"></span>
+                            <span class="nav-label">Mapa do Brasil</span>
+                        </span>
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- ÁREA PRINCIPAL DO CONTEÚDO (DASHBOARD) -->
+        <div class="app-content-area">
+
+    <!-- CONTEÚDO PRINCIPAL (ESCALA MATERIAL DESIGN 3: 16PX MOBILE, 24PX TABLET, 32PX DESKTOP) -->
+    <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 space-y-4 sm:space-y-6">
+
+        <!-- CARDS DE MÉTRICAS GERAIS (GRID MULTI-DISPOSITIVO: 2 COLS MOBILE / 4 COLS DESKTOP) -->
+        <section class="metric-grid grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 w-full">
+
+            <!-- Card Lula (PT) -->
+            <div class="glass-panel p-3.5 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden shadow-sm min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-2 sm:mb-2.5 min-w-0">
+                    <span
+                        class="text-[10px] sm:text-xs font-mono font-bold text-ptRed-400 uppercase tracking-wider flex items-center gap-1 sm:gap-1.5 flex-shrink-0 truncate">
+                        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-ptRed-500 flex-shrink-0"></span> Lula (PT)
+                    </span>
+                    <span id="badgeLulaStatus" class="badge-status badge-pt text-[9px] sm:text-xs flex-shrink-0">
+                        Reeleito
+                    </span>
+                </div>
+                <div class="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight" id="cardLulaPct">51,79%</div>
+                <div class="text-[11px] sm:text-xs text-slate-400 font-mono mt-1 truncate" id="cardLulaVotes">64.256.232 votos</div>
+                <div
+                    class="mt-3 pt-2 sm:pt-2.5 border-t border-borderDark/60 text-[10px] sm:text-[11px] text-slate-400 flex items-center justify-between font-mono gap-1">
+                    <span class="flex-shrink-0">Venceu:</span>
+                    <strong class="text-white font-bold flex-shrink-0" id="cardLulaUFs">13 UFs</strong>
+                </div>
+            </div>
+
+            <!-- Card Flávio Bolsonaro (PL) -->
+            <div class="glass-panel p-3.5 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden shadow-sm min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-2 sm:mb-2.5 min-w-0">
+                    <span
+                        class="text-[10px] sm:text-xs font-mono font-bold text-plBlue-400 uppercase tracking-wider flex items-center gap-1 sm:gap-1.5 flex-shrink-0 truncate">
+                        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-plBlue-500 flex-shrink-0"></span> Flávio (PL)
+                    </span>
+                    <span id="badgeFlavioStatus"
+                        class="badge-status badge-pl text-[9px] sm:text-xs flex-shrink-0">
+                        2º Colocado
+                    </span>
+                </div>
+                <div class="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight" id="cardFlavioPct">48,21%</div>
+                <div class="text-[11px] sm:text-xs text-slate-400 font-mono mt-1 truncate" id="cardFlavioVotes">59.826.041 votos</div>
+                <div
+                    class="mt-3 pt-2 sm:pt-2.5 border-t border-borderDark/60 text-[10px] sm:text-[11px] text-slate-400 flex items-center justify-between font-mono gap-1">
+                    <span class="flex-shrink-0">Venceu:</span>
+                    <strong class="text-white font-bold flex-shrink-0" id="cardFlavioUFs">14 UFs</strong>
+                </div>
+            </div>
+
+            <!-- Diferença e Margem -->
+            <div class="glass-panel p-3.5 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden shadow-sm min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-2 sm:mb-2.5 min-w-0">
+                    <span class="text-[10px] sm:text-xs font-mono font-bold text-amber-400 uppercase tracking-wider truncate">Saldo Líquido</span>
+                    <span id="iconDiffCard" class="text-slate-500 text-xs flex-shrink-0"></span>
+                </div>
+                <div class="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight" id="cardDiffVotes">+4.429.191</div>
+                <div class="text-[11px] sm:text-xs text-emerald-400 font-mono mt-1 truncate" id="cardDiffPct">Margem: +3,58 pp (PT)</div>
+                <div
+                    class="mt-3 pt-2 sm:pt-2.5 border-t border-borderDark/60 text-[10px] sm:text-[11px] text-slate-400 flex items-center justify-between font-mono gap-1">
+                    <span class="flex-shrink-0">Brancos/Nulos:</span>
+                    <strong class="text-slate-300 font-bold flex-shrink-0" id="cardSpoiled">4.153.801</strong>
+                </div>
+            </div>
+
+            <!-- Demografia Brasil (TSE x IBGE) -->
+            <div class="glass-panel p-3.5 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden shadow-sm min-w-0">
+                <div class="flex items-center justify-between gap-1 mb-2 sm:mb-2.5 min-w-0">
+                    <span class="text-[10px] sm:text-xs font-mono font-bold text-purple-400 uppercase tracking-wider truncate">Demografia</span>
+                    <span id="iconDemogCard" class="text-slate-500 text-xs flex-shrink-0"></span>
+                </div>
+                <div class="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono leading-tight" id="cardElecRatio">73,60%</div>
+                <div class="text-[11px] sm:text-xs text-slate-400 font-mono mt-1 truncate">Eleitores por Habitante</div>
+                <div
+                    class="mt-3 pt-2 sm:pt-2.5 border-t border-borderDark/60 text-[10px] sm:text-[11px] text-slate-400 flex items-center justify-between font-mono gap-1">
+                    <span class="flex-shrink-0">Eleitor/Pop:</span>
+                    <strong class="text-slate-300 font-bold flex-shrink-0" id="cardElecPopDetail">157,8M / 203,1M</strong>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SEÇÃO: SOMA DAS VANTAGENS & INDICADORES CONSOLIDADOS (TSE 2026) -->
+        <section class="glass-panel rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-sm space-y-3.5 sm:space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-borderDark pb-3 sm:pb-3.5">
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span id="iconAdvantageHeader" class="text-amber-400"></span>
+                        <span>Soma das Vantagens & Indicadores Globais de Apuração</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Margens somadas por UF. Votos, comparecimento, brancos e nulos são totais nacionais e incluem o exterior</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-2 py-0.5 rounded-md flex items-center gap-1.5" id="badgeTurnSummary">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span id="labelTurnBadge">2º Turno Consolidado</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Grade de 4 Cards Estratégicos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+                <!-- Card 1: Soma das Vantagens PT -->
+                <div class="bg-panelDark p-3.5 sm:p-4 rounded-xl border border-borderDark relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-mono font-bold text-ptRed-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-ptRed-500"></span> Vantagem PT
+                        </span>
+                        <span id="iconCardAdvPT" class="text-ptRed-400 text-xs"></span>
+                    </div>
+                    <div>
+                        <div class="text-lg sm:text-xl font-black text-white font-mono leading-tight" id="cardAdvantagePT">+14.448.350</div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono mt-1" id="cardAdvantagePTSub">Soma dos saldos nas 13 UFs vencidas</div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-borderDark/60">
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden flex">
+                            <div id="barAdvPT" class="bg-ptRed-500 h-1.5 transition-all duration-300" style="width: 59%"></div>
+                            <div id="barAdvPL" class="bg-plBlue-500 h-1.5 transition-all duration-300" style="width: 41%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+                            <span id="pctAdvPT">58,98% da margem</span>
+                            <span>Participação</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Soma das Vantagens PL -->
+                <div class="bg-panelDark p-3.5 sm:p-4 rounded-xl border border-borderDark relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-mono font-bold text-plBlue-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-plBlue-500"></span> Vantagem PL
+                        </span>
+                        <span id="iconCardAdvPL" class="text-plBlue-400 text-xs"></span>
+                    </div>
+                    <div>
+                        <div class="text-lg sm:text-xl font-black text-white font-mono leading-tight" id="cardAdvantagePL">+10.046.816</div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono mt-1" id="cardAdvantagePLSub">Soma dos saldos nas 14 UFs vencidas</div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-borderDark/60">
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden flex">
+                            <div id="barAdvPLSecond" class="bg-plBlue-500 h-1.5 transition-all duration-300" style="width: 41%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+                            <span id="pctAdvPL">41,02% da margem</span>
+                            <span class="text-plBlue-400 font-bold" id="cardNetLeaderLabel">Saldo: +4,4M (PT)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Comparecimento vs Abstenção Oficial -->
+                <div class="bg-panelDark p-3.5 sm:p-4 rounded-xl border border-borderDark relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span id="iconCardTurnout"></span> Comparecimento
+                        </span>
+                        <span class="text-[11px] font-mono font-bold text-emerald-400" id="cardTurnoutPct">81,01%</span>
+                    </div>
+                    <div>
+                        <div class="text-lg sm:text-xl font-black text-white font-mono leading-tight" id="cardTurnoutVotes">127.854.631</div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono mt-1">Votantes compareceram às urnas</div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-borderDark/60">
+                        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden flex">
+                            <div id="barTurnout" class="bg-emerald-500 h-1.5 transition-all duration-300" style="width: 81%"></div>
+                            <div id="barAbstencao" class="bg-slate-600 h-1.5 transition-all duration-300" style="width: 19%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+                            <span>Abstenções:</span>
+                            <strong class="text-amber-400 font-bold" id="cardAbstencaoDetail">29,9M (18,99%)</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Votos Não-Nominais (Brancos & Nulos) -->
+                <div class="bg-panelDark p-3.5 sm:p-4 rounded-xl border border-borderDark relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] sm:text-xs font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span id="iconCardInvalidos"></span> Brancos & Nulos
+                        </span>
+                        <span class="text-[11px] font-mono font-bold text-purple-400" id="cardInvalidosPct">3,24%</span>
+                    </div>
+                    <div>
+                        <div class="text-lg sm:text-xl font-black text-white font-mono leading-tight" id="cardInvalidosVotes">4.144.009</div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-400 font-mono mt-1">Votos fora da disputa nominal</div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-borderDark/60 flex justify-between text-[10px] font-mono text-slate-400">
+                        <div>
+                            <span>Brancos: </span>
+                            <strong class="text-slate-200 font-bold" id="cardBrancosDetail">1.425.821</strong>
+                        </div>
+                        <div>
+                            <span>Nulos: </span>
+                            <strong class="text-slate-200 font-bold" id="cardNulosDetail">2.718.188</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CARDS DE VIRADA HISTÓRICA E INSIGHTS -->
+        <section
+            class="bg-amber-500/10 border border-amber-500/30 rounded-lg sm:rounded-xl p-2.5 sm:p-3.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2.5 sm:gap-3.5">
+            <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-md sm:rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm sm:text-base border border-amber-500/40"
+                    id="iconViradaHighlight">
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-xs sm:text-sm font-bold text-amber-200" id="viradaTitle">Destaque de Virada Eleitoral</h2>
+                    <p class="text-[11px] sm:text-xs text-amber-200/80 mt-0.5 leading-relaxed" id="viradaText"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0 w-full md:w-auto">
+                <button id="btnFilterVirada" type="button"
+                    class="px-3 py-1.5 rounded-lg btn-br-gold font-bold text-xs font-mono transition shadow w-full md:w-auto text-center">
+                    Ver na Tabela
+                </button>
+            </div>
+        </section>
+
+        <!-- ÁREA DE GRÁFICOS ANALÍTICOS (MAPA GEOPOLÍTICO & CHART.JS) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-2.5 sm:gap-4">
+
+            <!-- Painel 1: Visualização Geopolítica (Mapa do Brasil & Maiores Colégios) -->
+            <div class="lg:col-span-2 glass-panel rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 sm:mb-2.5 border-b border-borderDark pb-2 sm:pb-2.5">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                            <span id="iconMapHeader" class="text-emerald-400"></span>
+                            <span id="mapSectionTitle">Mapa Geopolítico das 27 UFs</span>
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400" id="mapSectionSubtitle">Divisão territorial de votos no turno selecionado (Passe o mouse ou clique na UF)</p>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- Alternância de Visualização entre Mapa e Gráfico de Barras -->
+                        <div class="segmented-control">
+                            <button id="btnViewMap" type="button" class="segmented-control-btn active">
+                                <span id="iconViewMap"></span>
+                                <span>Mapa</span>
+                            </button>
+                            <button id="btnViewBar" type="button" class="segmented-control-btn">
+                                <span id="iconViewBar"></span>
+                                <span>Barras</span>
+                            </button>
+                        </div>
+                        <span class="text-xs font-mono text-slate-400 bg-surface-card px-2 py-0.5 rounded-md border border-line-hairline" id="chartTurnLabel">
+                            Exibindo: 2º Turno
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Visão 1: Mapa do Brasil em SVG -->
+                <div id="viewMapWrapper" class="relative flex-1 min-h-[280px] sm:min-h-[340px] flex items-center justify-center p-1">
+                    <div id="brazilMapContainer" class="brazil-map-container"></div>
+                </div>
+
+                <!-- Visão 2: Gráfico de Barras dos Maiores Colégios -->
+                <div id="viewBarWrapper" class="relative flex-1 min-h-[280px] sm:min-h-[340px] hidden">
+                    <canvas id="barChartCollegios"></canvas>
+                </div>
+            </div>
+
+            <!-- Gráfico 2: Distribuição de Força Regional & Filtros do Mapa -->
+            <div class="glass-panel rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow flex flex-col">
+                <div class="mb-2 sm:mb-2.5 border-b border-borderDark pb-2 sm:pb-2.5 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                            <span id="iconUfPieHeader" class="text-purple-400"></span>
+                            <span>Divisão dos 27 Estados</span>
+                        </h3>
+                        <p class="text-[11px] sm:text-xs text-slate-400">Total de UFs conquistadas por partido</p>
+                    </div>
+                    <!-- Filtro rápido para o Mapa -->
+                    <div class="flex items-center gap-1.5 font-mono">
+                        <button id="mapFltAll" type="button" title="Todas as UFs" class="chart-mini-filter active-all">Todas</button>
+                        <button id="mapFltPT" type="button" title="Filtrar PT" class="chart-mini-filter">PT</button>
+                        <button id="mapFltPL" type="button" title="Filtrar PL" class="chart-mini-filter">PL</button>
+                    </div>
+                </div>
+                <div class="donut-wrap">
+                    <canvas id="doughnutUFs"></canvas>
+                </div>
+                <div class="mt-auto pt-2.5 sm:pt-3 border-t border-borderDark grid grid-cols-2 gap-2 text-center text-xs font-mono">
+                    <div class="bg-panelDark p-2 rounded-lg border border-borderDark">
+                        <span class="text-ptRed-400 block font-bold" id="donutPTText">PT: 13 UFs</span>
+                        <span class="text-[10px] text-slate-400" id="donutPTRegions"></span>
+                    </div>
+                    <div class="bg-panelDark p-2 rounded-lg border border-borderDark">
+                        <span class="text-plBlue-400 block font-bold" id="donutPLText">PL: 14 UFs</span>
+                        <span class="text-[10px] text-slate-400" id="donutPLRegions"></span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ABA 1: TABELA FEDERATIVA COMPLETA (27 UFS) -->
+        <section id="tabUFs" role="tabpanel" aria-labelledby="tabBtnUFs" class="glass-panel rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow space-y-2.5 sm:space-y-3.5">
+
+            <!-- Controles e Filtros da Tabela -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 sm:gap-2.5">
+                <div class="filter-bar">
+                    <span class="filter-bar-label">Filtrar:</span>
+                    <button id="fltALL" type="button" class="filter-chip active-primary">Todas</button>
+                    <button id="fltPT" type="button" class="filter-chip">Vitória PT</button>
+                    <button id="fltPL" type="button" class="filter-chip">Vitória PL</button>
+                    <button id="fltVIRADA" type="button" class="filter-chip">Virada</button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <div class="search-input-wrapper flex-1 md:w-64">
+                        <span id="iconSearchState" class="search-icon"></span>
+                        <input type="text" id="stateSearchInput" placeholder="Buscar estado ou UF..." class="search-input">
+                    </div>
+                    <select id="stateSortSelect" class="fluent-select">
+                        <option value="elec-desc">Maior Eleitorado (TSE)</option>
+                        <option value="pop-desc">Maior População (IBGE)</option>
+                        <option value="diff-desc">Maior Saldo no 2º Turno</option>
+                        <option value="diff-asc">Menor Diferença (Mais Disputado)</option>
+                        <option value="ratio-desc">Maior Razão (Eleitor/Hab)</option>
+                        <option value="name-asc">Nome Alfabético (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabela Responsiva com Scroll -->
+            <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
+                <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                    <thead
+                        class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
+                        <tr>
+                            <th data-sort="uf" class="th-sortable col-sticky-uf px-2.5 py-2">
+                                <span>UF</span><span class="sort-indicator" id="sortIcon_uf"></span>
+                            </th>
+                            <th data-sort="name" class="th-sortable col-sticky-name px-2.5 py-2">
+                                <span>Estado</span><span class="sort-indicator" id="sortIcon_name"></span>
+                            </th>
+                            <th data-sort="region" class="th-sortable px-2.5 py-2">
+                                <span>Região</span><span class="sort-indicator" id="sortIcon_region"></span>
+                            </th>
+                            <th data-sort="t1" class="th-sortable px-2.5 py-2 text-center">
+                                <span>1º Turno (PT × PL)</span><span class="sort-indicator" id="sortIcon_t1"></span>
+                            </th>
+                            <th data-sort="t2" class="th-sortable px-2.5 py-2 text-center">
+                                <span>2º Turno (PT × PL)</span><span class="sort-indicator" id="sortIcon_t2"></span>
+                            </th>
+                            <th data-sort="margin" id="thUfMargin" class="th-sortable px-2.5 py-2 text-right">
+                                <span>Vantagem (2ºT)</span><span class="sort-indicator" id="sortIcon_margin"></span>
+                            </th>
+                            <th data-sort="elec" class="th-sortable px-2.5 py-2 text-right">
+                                <span>Eleitores (TSE)</span><span class="sort-indicator" id="sortIcon_elec"></span>
+                            </th>
+                            <th data-sort="pop" class="th-sortable px-2.5 py-2 text-right">
+                                <span>População (IBGE)</span><span class="sort-indicator" id="sortIcon_pop"></span>
+                            </th>
+                            <th data-sort="nonVoters" class="th-sortable px-2.5 py-2 text-right">
+                                <span>Não Votantes (Pop - Elec)</span><span class="sort-indicator" id="sortIcon_nonVoters"></span>
+                            </th>
+                            <th data-sort="ratio" class="th-sortable px-2.5 py-2 text-right">
+                                <span>Razão E/H</span><span class="sort-indicator" id="sortIcon_ratio"></span>
+                            </th>
+                            <th class="px-2.5 py-2 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ufTableBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
+                </table>
+            </div>
+
+        </section>
+
+        <!-- ABA 2: CONSULTA MUNICIPAL E ZONAS ELEITORAIS -->
+        <section id="tabMunicipios" role="tabpanel" aria-labelledby="tabBtnMunicipios" class="hidden glass-panel rounded-lg sm:rounded-xl p-2.5 sm:p-4 shadow space-y-2.5 sm:space-y-3.5">
+            <div class="border-b border-borderDark pb-2.5 sm:pb-3">
+                <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                    <span id="iconTabMunis" class="text-amber-400"></span>
+                    <span>Municípios do Brasil</span>
+                </h3>
+                <p class="text-[11px] sm:text-xs text-slate-400">Votação de todos os municípios no turno selecionado no topo, cruzada com a população do Censo IBGE 2022 pelo código IBGE</p>
+                <p id="muniViradaSummary" class="text-[11px] sm:text-xs text-amber-200/90 mt-1"></p>
+            </div>
+
+            <!-- Controles e Filtros da Tabela Municipal -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2.5 sm:gap-3">
+                <div class="filter-bar">
+                    <span class="filter-bar-label">Filtrar:</span>
+                    <button id="fltMuniALL" type="button" class="filter-chip active-primary">Todos</button>
+                    <button id="fltMuniPT" type="button" class="filter-chip">Vitória PT</button>
+                    <button id="fltMuniPL" type="button" class="filter-chip">Vitória PL</button>
+                    <button id="fltMuniVirada" type="button" class="filter-chip">Virada</button>
+                    <button id="fltMuniCapitais" type="button" class="filter-chip">Capitais</button>
+                    <button id="fltMuniAlta" type="button" class="filter-chip">Alta Densidade</button>
+                    <button id="fltMuniJovem" type="button" class="filter-chip">Base Jovem</button>
+                </div>
+
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <div class="search-input-wrapper w-full md:w-72">
+                        <span id="iconSearchMuni" class="search-icon"></span>
+                        <input type="text" id="muniSearchInput" placeholder="Município, UF ou código IBGE..." class="search-input">
+                    </div>
+                    <button id="btnExportMuniCsv" type="button" class="action-btn action-btn-secondary" title="Baixar CSV com todos os municípios do filtro atual (os dois turnos)">
+                        <span id="iconExportMuniCsv"></span>
+                        <span class="action-btn-text">CSV</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="muniTableScroll" class="overflow-x-auto custom-scroll border border-borderDark rounded-lg muni-table-scroll">
+                <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                    <thead
+                        class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
+                        <tr>
+                            <th data-sort-muni="name" class="th-sortable px-3.5 py-2.5">
+                                <span>Município</span><span class="sort-indicator" id="sortIconMuni_name"></span>
+                            </th>
+                            <th data-sort-muni="uf" class="th-sortable px-3.5 py-2.5">
+                                <span>UF</span><span class="sort-indicator" id="sortIconMuni_uf"></span>
+                            </th>
+                            <th data-sort-muni="voteT2" class="th-sortable px-3.5 py-2.5 text-center">
+                                <span id="thMuniVoteLabel">Votação 2ºT (PT × PL)</span><span class="sort-indicator" id="sortIconMuni_voteT2"></span>
+                            </th>
+                            <th data-sort-muni="winner" class="th-sortable px-3.5 py-2.5 text-center">
+                                <span id="thMuniWinnerLabel">Vencedor 2ºT</span><span class="sort-indicator" id="sortIconMuni_winner"></span>
+                            </th>
+                            <th data-sort-muni="elec" class="th-sortable px-3.5 py-2.5 text-right">
+                                <span>Eleitorado Apto</span><span class="sort-indicator" id="sortIconMuni_elec"></span>
+                            </th>
+                            <th data-sort-muni="pop" class="th-sortable px-3.5 py-2.5 text-right">
+                                <span>População (Censo 2022)</span><span class="sort-indicator" id="sortIconMuni_pop"></span>
+                            </th>
+                            <th data-sort-muni="ratio" class="th-sortable px-3.5 py-2.5 text-right">
+                                <span>Proporção E/H</span><span class="sort-indicator" id="sortIconMuni_ratio"></span>
+                            </th>
+                            <th data-sort-muni="profile" class="th-sortable px-3.5 py-2.5 text-center">
+                                <span>Perfil Demográfico</span><span class="sort-indicator" id="sortIconMuni_profile"></span>
+                            </th>
+                            <th class="px-3.5 py-2.5 text-center"><span>Zonas</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="muniTableBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
+                </table>
+            </div>
+            <p id="muniTableCounter" class="text-[11px] text-slate-400 font-mono"></p>
+
+            <!-- Ranking de participação: abstenção e brancos+nulos por município, cruzado com a faixa demográfica -->
+            <div class="participation-panel">
+                <div>
+                    <h4 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span id="iconParticipation" class="text-amber-400"></span>
+                        <span>Participação: abstenção e votos brancos/nulos</span>
+                    </h4>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Municípios com os maiores índices no turno selecionado. Médias por faixa são ponderadas pelo eleitorado e não incluem o exterior.</p>
+                </div>
+                <div class="filter-bar">
+                    <span class="filter-bar-label">Índice:</span>
+                    <button id="fltPartABSTENCAO" type="button" class="filter-chip active-primary">Abstenção (% dos aptos)</button>
+                    <button id="fltPartNAO_NOMINAL" type="button" class="filter-chip">Brancos + nulos (% dos votantes)</button>
+                </div>
+                <div class="filter-bar">
+                    <span class="filter-bar-label">Faixa:</span>
+                    <button id="fltPartBandALL" type="button" class="filter-chip active-primary">Todas</button>
+                    <button id="fltPartBandALTA" type="button" class="filter-chip">Alta</button>
+                    <button id="fltPartBandTIPICA" type="button" class="filter-chip">Média</button>
+                    <button id="fltPartBandJOVEM" type="button" class="filter-chip">Jovem</button>
+                    <label class="filter-bar-label" for="partMinElec">Porte:</label>
+                    <select id="partMinElec" class="participation-select">
+                        <option value="0">Todos</option>
+                        <option value="10000" selected>10 mil+ eleitores</option>
+                        <option value="100000">100 mil+ eleitores</option>
+                    </select>
+                </div>
+                <div id="participationBands" class="participation-bands"></div>
+                <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
+                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                        <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark">
+                            <tr>
+                                <th class="px-3 py-2.5 text-right">#</th>
+                                <th class="px-3 py-2.5">Município</th>
+                                <th class="px-3 py-2.5">UF</th>
+                                <th class="px-3 py-2.5">Faixa</th>
+                                <th class="px-3 py-2.5 text-right">Eleitorado</th>
+                                <th class="px-3 py-2.5 text-right" id="thParticipationMetric">Abstenção</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participationTableBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
+                    </table>
+                </div>
+                <p id="participationCounter" class="text-[11px] text-slate-400 font-mono"></p>
+            </div>
+        </section>
+
+        <!-- ABA 3: CORRELAÇÃO DEMOGRÁFICA (ELEITORES × HABITANTES) -->
+        <section id="tabDemografia" role="tabpanel" aria-labelledby="tabBtnDemografia" class="hidden glass-panel rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow space-y-4 sm:space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-borderDark pb-2.5 sm:pb-3">
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span id="iconTabDemog" class="text-purple-400"></span>
+                        <span>Análise de Representatividade Demográfica das 27 UFs</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Como a proporção de eleitores em relação à população total se distribui pelo país</p>
+                </div>
+                <span class="text-xs font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-500/40 px-2.5 py-1 rounded-lg" id="demogCountBadge">
+                    27 UFs analisadas
+                </span>
+            </div>
+
+            <!-- Controles e Filtros da Demografia -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2.5 sm:gap-3">
+                <div class="filter-bar">
+                    <span class="filter-bar-label">Faixa:</span>
+                    <button id="fltDemogALL" type="button" class="filter-chip active-primary">Todas</button>
+                    <button id="fltDemogTipica" type="button" class="filter-chip">Média</button>
+                    <button id="fltDemogAlta" type="button" class="filter-chip">Alta Densidade</button>
+                    <button id="fltDemogJovem" type="button" class="filter-chip">Base Jovem</button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <select id="demogRegionSelect" class="fluent-select">
+                        <option value="ALL">Todas as Regiões</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Nordeste">Nordeste</option>
+                        <option value="Centro-Oeste">Centro-Oeste</option>
+                        <option value="Sudeste">Sudeste</option>
+                        <option value="Sul">Sul</option>
+                    </select>
+
+                    <div class="search-input-wrapper flex-1 md:w-60">
+                        <span id="iconSearchDemog" class="search-icon"></span>
+                        <input type="text" id="demogSearchInput" placeholder="Buscar estado..." class="search-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Dispersão / Barras de Razão Demográfica -->
+            <div class="relative min-h-[300px] sm:min-h-[350px]">
+                <canvas id="ratioBarChart"></canvas>
+            </div>
+
+            <!-- Diagnóstico Teórico / Técnico (Cards Clicáveis como Filtro) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono">
+                <div id="cardDemogTipica" class="bg-panelDark p-3 rounded-lg sm:rounded-xl border border-borderDark hover:border-emerald-500/50 cursor-pointer transition space-y-1 shadow">
+                    <div class="text-emerald-400 font-bold flex items-center justify-between">
+                        <span id="demogTipicaTitle">Faixa Típica Nacional</span>
+                        <span class="text-[10px] text-slate-500">Filtrar</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] leading-relaxed" id="demogTipicaDesc"></p>
+                </div>
+                <div id="cardDemogAlta" class="bg-panelDark p-3 rounded-lg sm:rounded-xl border border-borderDark hover:border-amber-500/50 cursor-pointer transition space-y-1 shadow">
+                    <div class="text-amber-400 font-bold flex items-center justify-between">
+                        <span id="demogAltaTitle">Alta Densidade</span>
+                        <span class="text-[10px] text-slate-500">Filtrar</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] leading-relaxed" id="demogAltaDesc"></p>
+                </div>
+                <div id="cardDemogJovem" class="bg-panelDark p-3 rounded-lg sm:rounded-xl border border-borderDark hover:border-blue-500/50 cursor-pointer transition space-y-1 shadow">
+                    <div class="text-blue-400 font-bold flex items-center justify-between">
+                        <span id="demogJovemTitle">Base Jovem / Menor Razão</span>
+                        <span class="text-[10px] text-slate-500">Filtrar</span>
+                    </div>
+                    <p class="text-slate-400 text-[11px] leading-relaxed" id="demogJovemDesc"></p>
+                </div>
+            </div>
+
+            <!-- Tabela Analítica Demográfica Detalhada -->
+            <div class="space-y-2.5 pt-1 sm:pt-2">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-purple-400"></span>
+                        <span>Tabela Analítica Demográfica das UFs</span>
+                    </h4>
+                    <span class="text-xs text-slate-400 font-mono" id="demogTableCounter">27 UFs</span>
+                </div>
+                <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
+                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                        <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
+                            <tr>
+                                <th data-sort-demog="uf" class="th-sortable col-sticky-uf px-3.5 py-2.5">
+                                    <span>UF</span><span class="sort-indicator" id="sortIconDemog_uf"></span>
+                                </th>
+                                <th data-sort-demog="name" class="th-sortable col-sticky-name px-3.5 py-2.5">
+                                    <span>Estado</span><span class="sort-indicator" id="sortIconDemog_name"></span>
+                                </th>
+                                <th data-sort-demog="region" class="th-sortable px-3.5 py-2.5">
+                                    <span>Região</span><span class="sort-indicator" id="sortIconDemog_region"></span>
+                                </th>
+                                <th data-sort-demog="elec" class="th-sortable px-3.5 py-2.5 text-right">
+                                    <span>Eleitores (TSE)</span><span class="sort-indicator" id="sortIconDemog_elec"></span>
+                                </th>
+                                <th data-sort-demog="pop" class="th-sortable px-3.5 py-2.5 text-right">
+                                    <span>População (IBGE)</span><span class="sort-indicator" id="sortIconDemog_pop"></span>
+                                </th>
+                                <th data-sort-demog="nonVoters" class="th-sortable px-3.5 py-2.5 text-right">
+                                    <span>Não Votantes (Pop - Elec)</span><span class="sort-indicator" id="sortIconDemog_nonVoters"></span>
+                                </th>
+                                <th data-sort-demog="ratio" class="th-sortable px-3.5 py-2.5 text-right">
+                                    <span>Razão E/H (%)</span><span class="sort-indicator" id="sortIconDemog_ratio"></span>
+                                </th>
+                                <th class="px-3.5 py-2.5 text-center">Classificação Demográfica</th>
+                            </tr>
+                        </thead>
+                        <tbody id="demogTableBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 4: MAPA GEOPOLÍTICO EXPANDIDO DO BRASIL -->
+        <section id="tabMapa" role="tabpanel" aria-labelledby="tabBtnMapa" class="hidden glass-panel rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow space-y-4 sm:space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-borderDark pb-2.5 sm:pb-3">
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span id="iconTabMapHeader" class="text-emerald-400"></span>
+                        <span>Auditoria Geoespacial das 27 Unidades Federativas</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Distribuição territorial de poder político, zonas de influência e estados decisivos</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="mapViradaBadge" class="text-xs font-mono text-amber-400 bg-amber-950/40 border border-amber-500/40 px-2.5 py-1 rounded-lg"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-center">
+                <!-- Mapa em Destaque Expandido -->
+                <div class="lg:col-span-2 flex justify-center items-center bg-cardDark/50 p-2 sm:p-4 rounded-xl border border-borderDark">
+                    <div id="brazilMapExpandedContainer" class="brazil-map-container"></div>
+                </div>
+
+                <!-- Painel Lateral de Macrorregiões -->
+                <div class="space-y-2.5 font-mono text-xs">
+                    <h4 class="text-white font-bold text-xs sm:text-sm border-b border-borderDark pb-2 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400"></span>
+                        <span>Força Partidária por Macrorregião</span>
+                    </h4>
+
+                    <div id="regionCardNorte" class="bg-panelDark p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1 hover:border-emerald-500/50 cursor-pointer transition shadow">
+                        <div class="flex justify-between items-center text-emerald-400 font-bold">
+                            <span id="regNorteTitle">Região Norte</span>
+                            <span class="text-[10px] text-slate-400" id="regNorteScore">PT 3 × 4 PL</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400" id="regNorteDesc"></p>
+                    </div>
+
+                    <div id="regionCardNordeste" class="bg-panelDark p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1 hover:border-ptRed-500/50 cursor-pointer transition shadow">
+                        <div class="flex justify-between items-center text-ptRed-400 font-bold">
+                            <span id="regNordesteTitle">Região Nordeste</span>
+                            <span class="text-[10px] text-ptRed-300 font-bold" id="regNordesteScore">PT 9 × 0 PL (100%)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400" id="regNordesteDesc"></p>
+                    </div>
+
+                    <div id="regionCardCentroOeste" class="bg-panelDark p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1 hover:border-plBlue-500/50 cursor-pointer transition shadow">
+                        <div class="flex justify-between items-center text-plBlue-400 font-bold">
+                            <span id="regCentroOesteTitle">Região Centro-Oeste</span>
+                            <span class="text-[10px] text-plBlue-300 font-bold" id="regCentroOesteScore">PL 4 × 0 PT (100%)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400" id="regCentroOesteDesc"></p>
+                    </div>
+
+                    <div id="regionCardSudeste" class="bg-panelDark p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1 hover:border-amber-500/50 cursor-pointer transition shadow">
+                        <div class="flex justify-between items-center text-amber-400 font-bold">
+                            <span id="regSudesteTitle">Região Sudeste</span>
+                            <span class="text-[10px] text-slate-300" id="regSudesteScore">PL 3 × 1 PT (Virada MG)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400" id="regSudesteDesc"></p>
+                    </div>
+
+                    <div id="regionCardSul" class="bg-panelDark p-2.5 sm:p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1 hover:border-plBlue-500/50 cursor-pointer transition shadow">
+                        <div class="flex justify-between items-center text-plBlue-400 font-bold">
+                            <span id="regSulTitle">Região Sul</span>
+                            <span class="text-[10px] text-plBlue-300 font-bold" id="regSulScore">PL 3 × 0 PT (100%)</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400" id="regSulDesc"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    </div><!-- Fim do .app-content-area -->
+    </div><!-- Fim do .app-main-layout -->
+
+        <!-- RODAPÉ TÉCNICO & FONTES DE DADOS OFICIAIS (FULL WIDTH GLOBAL) -->
+        <footer class="app-footer" id="appFooter">
+            <div class="footer-container">
+                <!-- Seção de Fontes Oficiais e Referências -->
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <span id="iconFooterDb" class="text-emerald-400"></span>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 font-mono">
+                            Fontes Governamentais Oficiais &amp; Referências de Microdados
+                        </h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Fonte 1: TSE -->
+                        <a href="https://dadosabertos.tse.jus.br" target="_blank" rel="noopener noreferrer"
+                           class="footer-source-card group">
+                            <div class="footer-source-content">
+                                <div class="footer-source-title text-emerald-400">
+                                    <span>TSE — Portal de Dados Abertos</span>
+                                    <span id="iconTseExt" class="text-slate-500 group-hover:text-emerald-400 transition"></span>
+                                </div>
+                                <p class="footer-source-desc">
+                                    Microdados de votação nominal por seção e município oficial do Tribunal Superior Eleitoral. Resultados auditados dos 1º e 2º turnos das Eleições 2026.
+                                </p>
+                            </div>
+                            <div class="footer-source-bottom">
+                                <span class="footer-url text-emerald-400/90">dadosabertos.tse.jus.br</span>
+                                <span class="badge-status badge-apurado text-[9px]">TSE Oficial</span>
+                            </div>
+                        </a>
+
+                        <!-- Fonte 2: IBGE -->
+                        <a href="https://www.ibge.gov.br" target="_blank" rel="noopener noreferrer"
+                           class="footer-source-card group">
+                            <div class="footer-source-content">
+                                <div class="footer-source-title text-blue-400">
+                                    <span>IBGE — Censo &amp; População</span>
+                                    <span id="iconIbgeExt" class="text-slate-500 group-hover:text-blue-400 transition"></span>
+                                </div>
+                                <p class="footer-source-desc">
+                                    Instituto Brasileiro de Geografia e Estatística. Censo Demográfico e Estimativas Oficiais de População Residente de todas as 27 UFs e 5.570 municípios.
+                                </p>
+                            </div>
+                            <div class="footer-source-bottom">
+                                <span class="footer-url text-blue-400/90">ibge.gov.br</span>
+                                <span class="badge-status badge-pl text-[9px]">Demografia</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Prova de origem: SHA-256 das fontes brutas (gerado por scripts/build_app_data.py) -->
+                <details id="footerProvenance" class="footer-provenance">
+                    <summary>
+                        <span id="iconProvenance" class="text-emerald-400"></span>
+                        <span class="footer-provenance-title">Prova de origem dos dados (SHA-256)</span>
+                        <span id="provenanceGeneratedAt" class="footer-provenance-meta"></span>
+                    </summary>
+                    <div class="footer-provenance-body">
+                        <p>Cada número do painel é derivado destes arquivos oficiais. Baixe os mesmos pacotes e confira os hashes;
+                            o TSE republica os pacotes, então um pacote mais novo que a data de obtenção pode ter outro hash.</p>
+                        <ul id="provenanceList" class="footer-provenance-list"></ul>
+                        <p>Para conferir automaticamente: <code>python3 scripts/verify_sources.py --fetch-ibge</code></p>
+                        <p id="provenanceDivergence"></p>
+                    </div>
+                </details>
+
+                <!-- Linha de Autoria e Soberania -->
+                <div class="footer-author-row">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span>Painel Soberano Eleições 2026 • Auditoria Oficial TSE &amp; Censo IBGE</span>
+                        <span class="text-slate-600 hidden sm:inline">•</span>
+                        <span class="text-emerald-400 font-bold">Local-First</span>
+                    </div>
+                    <span>Desenvolvido por Celso de Almeida Leite (Systekna) • Outubro de 2026</span>
+                </div>
+            </div>
+        </footer>
+
+    <!-- MODAL DE DETALHES DA UF -->
+    <div id="stateModal"
+        class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3.5 sm:p-4">
+        <div class="glass-panel border border-borderDark rounded-xl sm:rounded-2xl max-w-lg w-full p-4 sm:p-5 space-y-3.5 sm:space-y-4 shadow-2xl"
+            role="dialog" aria-modal="true" aria-labelledby="mStateName">
+            <div class="flex items-center justify-between border-b border-borderDark pb-2.5 sm:pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span
+                        class="w-8 h-8 rounded-lg sm:rounded-xl bg-panelDark border border-borderDark flex items-center justify-center font-mono font-black text-amber-400 text-xs"
+                        id="mUfCode">SP</span>
+                    <div>
+                        <h4 class="text-sm sm:text-base font-black text-white" id="mStateName">São Paulo</h4>
+                        <span class="text-[10px] text-slate-400 font-mono uppercase" id="mRegion">Região Sudeste</span>
+                    </div>
+                </div>
+                <button id="modalCloseBtn" type="button" aria-label="Fechar"
+                    class="w-7 h-7 rounded-lg btn-br-pill text-slate-300 flex items-center justify-center transition">
+                    <span id="iconModalClose"></span>
+                </button>
+            </div>
+
+            <div class="space-y-2.5 sm:space-y-3 font-mono text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-panelDark p-2.5 rounded-lg sm:rounded-xl border border-borderDark">
+                        <span class="text-[10px] text-slate-400 block">1º Turno</span>
+                        <div class="font-bold text-white mt-0.5 sm:mt-1" id="mTurn1Result">PT 46,4% × PL 53,6%</div>
+                        <span class="text-[10px] text-plBlue-400" id="mTurn1Winner">Venceu PL</span>
+                    </div>
+                    <div class="bg-panelDark p-2.5 rounded-lg sm:rounded-xl border border-borderDark">
+                        <span class="text-[10px] text-slate-400 block">2º Turno</span>
+                        <div class="font-bold text-white mt-0.5 sm:mt-1" id="mTurn2Result">PT 46,0% × PL 54,0%</div>
+                        <span class="text-[10px] text-plBlue-400" id="mTurn2Winner">Venceu PL</span>
+                    </div>
+                </div>
+
+                <div class="bg-panelDark p-3 rounded-lg sm:rounded-xl border border-borderDark space-y-1.5 sm:space-y-2">
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-400">Saldo no 2º Turno:</span>
+                        <span class="font-bold" id="mSaldoVotes">+2.070.000 (PL)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-400">População Total (IBGE):</span>
+                        <span class="text-purple-400 font-bold" id="mPopVal">44.411.238</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-400">Eleitorado Apto (TSE):</span>
+                        <span class="text-emerald-400 font-bold" id="mElecVal">34.406.488</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-400">Não Votantes (Menores/Não Alistados):</span>
+                        <span class="text-blue-300 font-bold" id="mNonVotersVal">10.004.750 (22,5%)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px]">
+                        <span class="text-slate-400">Razão Eleitor / Habitante:</span>
+                        <span class="text-amber-400 font-bold" id="mRatioVal">77,47%</span>
+                    </div>
+                </div>
+
+                <div id="mViradaBox"
+                    class="hidden bg-amber-500/10 border border-amber-500/40 p-2.5 rounded-lg text-amber-300 text-xs flex items-center gap-2">
+                    <span id="iconViradaModal"></span>
+                    <span>Este estado inverteu o vencedor entre o 1º e o 2º turno.</span>
+                </div>
+            </div>
+
+            <div class="pt-1.5 sm:pt-2 flex justify-end">
+                <button id="modalCloseBtnBottom" type="button"
+                    class="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg btn-br-pill text-white text-xs font-bold transition">
+                    Fechar Detalhes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES DO MUNICÍPIO (com zonas eleitorais) -->
+    <div id="muniModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3.5 sm:p-4">
+        <div class="glass-panel border border-borderDark rounded-xl sm:rounded-2xl max-w-2xl w-full p-4 sm:p-5 space-y-3.5 shadow-2xl muni-modal-panel"
+            role="dialog" aria-modal="true" aria-labelledby="mmName">
+            <div class="flex items-center justify-between border-b border-borderDark pb-2.5 sm:pb-3 gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="w-8 h-8 rounded-lg sm:rounded-xl bg-panelDark border border-borderDark flex items-center justify-center font-mono font-black text-amber-400 text-xs flex-shrink-0" id="mmUf"></span>
+                    <div class="min-w-0">
+                        <h4 class="text-sm sm:text-base font-black text-white" id="mmName"></h4>
+                        <span class="text-[10px] text-slate-400 font-mono" id="mmMeta"></span>
+                    </div>
+                </div>
+                <button id="muniModalClose" type="button" class="w-7 h-7 rounded-lg btn-br-pill text-slate-300 flex items-center justify-center transition flex-shrink-0" aria-label="Fechar">
+                    <span id="iconMuniModalClose"></span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 font-mono text-xs">
+                <div class="bg-panelDark p-2.5 rounded-lg sm:rounded-xl border border-borderDark">
+                    <span class="text-[10px] text-slate-400 block">1º Turno (votos válidos)</span>
+                    <div class="font-bold text-white mt-1" id="mmT1"></div>
+                    <span class="text-[10px] text-slate-400 block mt-1" id="mmT1Part"></span>
+                </div>
+                <div class="bg-panelDark p-2.5 rounded-lg sm:rounded-xl border border-borderDark">
+                    <span class="text-[10px] text-slate-400 block">2º Turno (votos válidos)</span>
+                    <div class="font-bold text-white mt-1" id="mmT2"></div>
+                    <span class="text-[10px] text-slate-400 block mt-1" id="mmT2Part"></span>
+                </div>
+            </div>
+            <div id="mmVirada" class="hidden bg-amber-500/10 border border-amber-500/40 p-2.5 rounded-lg text-amber-300 text-xs"></div>
+
+            <div class="space-y-2">
+                <h5 class="text-xs font-bold text-white" id="mmZonesTitle">Zonas eleitorais</h5>
+                <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
+                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                        <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark">
+                            <tr>
+                                <th class="px-3 py-2">Zona</th>
+                                <th class="px-3 py-2 text-right">Aptos</th>
+                                <th class="px-3 py-2 text-right">Compar.</th>
+                                <th class="px-3 py-2 text-right">Brancos+nulos</th>
+                                <th class="px-3 py-2 text-center">PT × PL</th>
+                                <th class="px-3 py-2 text-center">Vencedor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mmZonesBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
+                    </table>
+                </div>
+                <p id="mmZonesStatus" class="text-[11px] text-slate-400 font-mono"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de abas inferior (estilo app, só no celular) -->
+    <nav id="appBottomNav" class="app-bottom-nav" aria-label="Navegação principal">
+        <button type="button" class="bottom-nav-item active" data-tab="tabUFs" aria-current="page">
+            <span id="iconBottomUFs"></span>
+            <span class="bottom-nav-label">UFs</span>
+        </button>
+        <button type="button" class="bottom-nav-item" data-tab="tabMunicipios">
+            <span id="iconBottomMunis"></span>
+            <span class="bottom-nav-label">Municípios</span>
+        </button>
+        <button type="button" class="bottom-nav-item" data-tab="tabDemografia">
+            <span id="iconBottomDemog"></span>
+            <span class="bottom-nav-label">Demografia</span>
+        </button>
+        <button type="button" class="bottom-nav-item" data-tab="tabMapa">
+            <span id="iconBottomMapa"></span>
+            <span class="bottom-nav-label">Mapa</span>
+        </button>
+    </nav>
+
+    <!-- Ponto de Entrada Canônico da Aplicação (Composition Root) -->
+    <script type="module" src="src/Program.js" onerror="document.getElementById('appFatalError').hidden = false"></script>
+</body>
+
+</html>

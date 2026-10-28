@@ -1,0 +1,13 @@
+{
+  "name": "stk-governo-brazil-eleicoes",
+  "private": true,
+  "description": "Painel Eleições 2026 (TSE × IBGE). Sem dependências: os testes usam o executor nativo do Node.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "verify-sources": "python3 scripts/verify_sources.py"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

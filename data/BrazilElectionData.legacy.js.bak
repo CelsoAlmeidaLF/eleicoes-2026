@@ -1,0 +1,59 @@
+/**
+ * Microdados Eleitorais e Demográficos Consolidados (TSE 2026 & IBGE Censo)
+ * Imutabilidade de dados base.
+ */
+export const BRAZIL_DATA = Object.freeze([
+  { uf: "AC", name: "Acre", region: "Norte", pop: 830018, elec: 588433, municipalities: 22, t1Lula: 129400, t1Flavio: 260300, t2Lula: 139200, t2Flavio: 282100, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "AL", name: "Alagoas", region: "Nordeste", pop: 3127683, elec: 2415740, municipalities: 102, t1Lula: 935000, t1Flavio: 671000, t2Lula: 1022000, t2Flavio: 720000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "AM", name: "Amazonas", region: "Norte", pop: 3941613, elec: 2647748, municipalities: 62, t1Lula: 1014000, t1Flavio: 902000, t2Lula: 1085000, t2Flavio: 978000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "AP", name: "Amapá", region: "Norte", pop: 733759, elec: 550696, municipalities: 16, t1Lula: 197000, t1Flavio: 196000, t2Lula: 215000, t2Flavio: 210000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "BA", name: "Bahia", region: "Nordeste", pop: 14141626, elec: 11291528, municipalities: 417, t1Lula: 5873000, t1Flavio: 2049000, t2Lula: 6251000, t2Flavio: 2294000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "CE", name: "Ceará", region: "Nordeste", pop: 8794957, elec: 6820673, municipalities: 184, t1Lula: 3411000, t1Flavio: 1378000, t2Lula: 3724000, t2Flavio: 1532000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "DF", name: "Distrito Federal", region: "Centro-Oeste", pop: 2817381, elec: 2206126, municipalities: 1, t1Lula: 649000, t1Flavio: 910000, t2Lula: 712000, t2Flavio: 998000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "ES", name: "Espírito Santo", region: "Sudeste", pop: 3833712, elec: 2928096, municipalities: 78, t1Lula: 960000, t1Flavio: 1162000, t2Lula: 1045000, t2Flavio: 1251000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "GO", name: "Goiás", region: "Centro-Oeste", pop: 7056495, elec: 4870354, municipalities: 246, t1Lula: 1450000, t1Flavio: 1980000, t2Lula: 1590000, t2Flavio: 2190000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "MA", name: "Maranhão", region: "Nordeste", pop: 6776699, elec: 5042999, municipalities: 217, t1Lula: 2603000, t1Flavio: 981000, t2Lula: 2811000, t2Flavio: 1095000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "MG", name: "Minas Gerais", region: "Sudeste", pop: 20539989, elec: 16290870, municipalities: 853, t1Lula: 5801000, t1Flavio: 5882000, t2Lula: 6512000, t2Flavio: 6398000, winT1: "PL", winT2: "PT", virada: true },
+  { uf: "MS", name: "Mato Grosso do Sul", region: "Centro-Oeste", pop: 2757013, elec: 1996359, municipalities: 79, t1Lula: 580000, t1Flavio: 794000, t2Lula: 635000, t2Flavio: 885000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "MT", name: "Mato Grosso", region: "Centro-Oeste", pop: 3658649, elec: 2469414, municipalities: 141, t1Lula: 633000, t1Flavio: 1102000, t2Lula: 698000, t2Flavio: 1215000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "PA", name: "Pará", region: "Norte", pop: 8121025, elec: 6082312, municipalities: 144, t1Lula: 2441000, t1Flavio: 1729000, t2Lula: 2635000, t2Flavio: 1892000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "PB", name: "Paraíba", region: "Nordeste", pop: 3974687, elec: 3056457, municipalities: 223, t1Lula: 1554000, t1Flavio: 753000, t2Lula: 1698000, t2Flavio: 831000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "PE", name: "Pernambuco", region: "Nordeste", pop: 9058931, elec: 7018098, municipalities: 185, t1Lula: 3558000, t1Flavio: 1451000, t2Lula: 3892000, t2Flavio: 1618000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "PI", name: "Piauí", region: "Nordeste", pop: 3271199, elec: 2570236, municipalities: 224, t1Lula: 1518000, t1Flavio: 432000, t2Lula: 1640000, t2Flavio: 485000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "PR", name: "Paraná", region: "Sul", pop: 11444380, elec: 8475632, municipalities: 399, t1Lula: 2362000, t1Flavio: 3824000, t2Lula: 2615000, t2Flavio: 4180000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "RJ", name: "Rio de Janeiro", region: "Sudeste", pop: 16055174, elec: 12827296, municipalities: 92, t1Lula: 3840000, t1Flavio: 4830000, t2Lula: 4210000, t2Flavio: 5290000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "RN", name: "Rio Grande do Norte", region: "Nordeste", pop: 3302729, elec: 2554727, municipalities: 167, t1Lula: 1261000, t1Flavio: 622000, t2Lula: 1375000, t2Flavio: 692000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "RO", name: "Rondônia", region: "Norte", pop: 1581196, elec: 1230987, municipalities: 52, t1Lula: 261000, t1Flavio: 580000, t2Lula: 285000, t2Flavio: 632000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "RR", name: "Roraima", region: "Norte", pop: 636707, elec: 389282, municipalities: 15, t1Lula: 72000, t1Flavio: 207000, t2Lula: 79000, t2Flavio: 228000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "RS", name: "Rio Grande do Sul", region: "Sul", pop: 10882965, elec: 8593469, municipalities: 497, t1Lula: 2807000, t1Flavio: 3418000, t2Lula: 3105000, t2Flavio: 3745000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "SC", name: "Santa Catarina", region: "Sul", pop: 7610361, elec: 5489658, municipalities: 295, t1Lula: 1279000, t1Flavio: 2824000, t2Lula: 1412000, t2Flavio: 3098000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "SE", name: "Sergipe", region: "Nordeste", pop: 2210004, elec: 1671801, municipalities: 75, t1Lula: 759000, t1Flavio: 438000, t2Lula: 825000, t2Flavio: 489000, winT1: "PT", winT2: "PT", virada: false },
+  { uf: "SP", name: "São Paulo", region: "Sudeste", pop: 44411238, elec: 34406488, municipalities: 645, t1Lula: 10630000, t1Flavio: 12280000, t2Lula: 11840000, t2Flavio: 13910000, winT1: "PL", winT2: "PL", virada: false },
+  { uf: "TO", name: "Tocantins", region: "Norte", pop: 1511460, elec: 1092536, municipalities: 139, t1Lula: 434000, t1Flavio: 379000, t2Lula: 472000, t2Flavio: 418000, winT1: "PT", winT2: "PT", virada: false }
+]);
+
+export const MUNICIPALITIES_DATA = Object.freeze([
+  { name: "São Paulo", uf: "SP", pop: 11451245, elec: 9314259, t2Lula: 3672000, t2Flavio: 3218000, winner: "PT" },
+  { name: "Rio de Janeiro", uf: "RJ", pop: 6211423, elec: 5003418, t2Lula: 1715000, t2Flavio: 1980000, winner: "PL" },
+  { name: "Brasília", uf: "DF", pop: 2817068, elec: 2206126, t2Lula: 712000, t2Flavio: 998000, winner: "PL" },
+  { name: "Salvador", uf: "BA", pop: 2418005, elec: 1983564, t2Lula: 1042000, t2Flavio: 445000, winner: "PT" },
+  { name: "Fortaleza", uf: "CE", pop: 2428678, elec: 1884522, t2Lula: 894000, t2Flavio: 512000, winner: "PT" },
+  { name: "Belo Horizonte", uf: "MG", pop: 2315560, elec: 1992984, t2Lula: 710000, t2Flavio: 735000, winner: "PL" },
+  { name: "Manaus", uf: "AM", pop: 2063547, elec: 1498410, t2Lula: 489000, t2Flavio: 615000, winner: "PL" },
+  { name: "Curitiba", uf: "PR", pop: 1773733, elec: 1419700, t2Lula: 395000, t2Flavio: 720000, winner: "PL" },
+  { name: "Recife", uf: "PE", pop: 1488920, elec: 1215546, t2Lula: 592000, t2Flavio: 310000, winner: "PT" },
+  { name: "Goiânia", uf: "GO", pop: 1437237, elec: 1032274, t2Lula: 295000, t2Flavio: 498000, winner: "PL" },
+  { name: "Belém", uf: "PA", pop: 1303389, elec: 1056251, t2Lula: 448000, t2Flavio: 382000, winner: "PT" },
+  { name: "Porto Alegre", uf: "RS", pop: 1332570, elec: 1096620, t2Lula: 472000, t2Flavio: 405000, winner: "PT" },
+  { name: "Guarulhos", uf: "SP", pop: 1291784, elec: 938210, t2Lula: 365000, t2Flavio: 392000, winner: "PL" },
+  { name: "Campinas", uf: "SP", pop: 1138309, elec: 884726, t2Lula: 310000, t2Flavio: 375000, winner: "PL" },
+  { name: "São Luís", uf: "MA", pop: 1037775, elec: 749890, t2Lula: 385000, t2Flavio: 212000, winner: "PT" },
+  { name: "Maceió", uf: "AL", pop: 957916, elec: 632910, t2Lula: 215000, t2Flavio: 288000, winner: "PL" },
+  { name: "Campo Grande", uf: "MS", pop: 897938, elec: 646199, t2Lula: 185000, t2Flavio: 315000, winner: "PL" },
+  { name: "Natal", uf: "RN", pop: 751300, elec: 583290, t2Lula: 260000, t2Flavio: 202000, winner: "PT" },
+  { name: "Teresina", uf: "PI", pop: 866300, elec: 588523, t2Lula: 345000, t2Flavio: 168000, winner: "PT" },
+  { name: "João Pessoa", uf: "PB", pop: 833932, elec: 566290, t2Lula: 254000, t2Flavio: 228000, winner: "PT" },
+  { name: "Cuiabá", uf: "MT", pop: 650912, elec: 445223, t2Lula: 124000, t2Flavio: 232000, winner: "PL" },
+  { name: "Aracaju", uf: "SE", pop: 602757, elec: 416605, t2Lula: 198000, t2Flavio: 154000, winner: "PT" },
+  { name: "Florianópolis", uf: "SC", pop: 537213, elec: 410812, t2Lula: 145000, t2Flavio: 185000, winner: "PL" }
+]);

@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Painel Eleições 2026 · TSE & IBGE",
+  "short_name": "Painel 2026",
+  "description": "Painel analítico das Eleições 2026 (Presidente) com microdados oficiais do TSE e do Censo IBGE 2022. Funciona offline.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141414",
+  "theme_color": "#1C1C1C",
+  "categories": ["government", "news", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
