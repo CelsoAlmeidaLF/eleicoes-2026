@@ -28,8 +28,8 @@ const withCount = (label, n) => `${label} (${fmtInt(n)})`;
 const bandRanges = b => ({ ALTA: `≥${b.high}%`, JOVEM: `<${b.low}%`, TIPICA: `${b.low}% a <${b.high}%` });
 const UF_RANGES = bandRanges(UF_RATIO_BANDS);
 const MUNI_RANGES = bandRanges(MUNI_RATIO_BANDS);
-const TAB_ORDER = ['tabUFs', 'tabMunicipios', 'tabDemografia', 'tabMapa'];
-const TAB_BUTTONS = { tabUFs: 'tabBtnUFs', tabMunicipios: 'tabBtnMunicipios', tabDemografia: 'tabBtnDemografia', tabMapa: 'tabBtnMapa' };
+const TAB_ORDER = ['tabUFs', 'tabMunicipios', 'tabDemografia', 'tabNoticias', 'tabMapa'];
+const TAB_BUTTONS = { tabUFs: 'tabBtnUFs', tabMunicipios: 'tabBtnMunicipios', tabDemografia: 'tabBtnDemografia', tabNoticias: 'tabBtnNoticias', tabMapa: 'tabBtnMapa' };
 
 /**
  * Controller de Apresentação e Interação com a UI
@@ -40,8 +40,9 @@ export class ElectionUIController {
    * @param {import('../application/services/ExportService.js').ExportService} exportService
    * @param {import('../infrastructure/charts/ElectionChartAdapter.js').ElectionChartAdapter} chartAdapter
    */
-  constructor(analysisService, exportService, chartAdapter, mapAdapter = null, pwaAdapter = null, shell = null) {
+  constructor(analysisService, exportService, chartAdapter, mapAdapter = null, pwaAdapter = null, shell = null, noticiasView = null) {
     this._service = analysisService;
+    this._noticias = noticiasView; // aba Notícias (NoticiasView), montada na primeira visita
     this._shell = shell; // StkGovShell (design system comum): botão de menu, gaveta e barra recolhida
     this._pwa = pwaAdapter;
     this._export = exportService;
@@ -384,6 +385,9 @@ export class ElectionUIController {
       { id: 'iconTabMunis', name: 'city' },
       { id: 'iconTabDemog', name: 'scaleUnbalanced' },
       { id: 'iconTabMapa', name: 'map' },
+      { id: 'iconTabNoticias', name: 'newspaper' },
+      { id: 'iconBottomNoticias', name: 'newspaper' },
+      { id: 'iconTabNoticiasHeader', name: 'newspaper' },
       { id: 'iconBottomUFs', name: 'tableList' },
       { id: 'iconBottomMunis', name: 'city' },
       { id: 'iconBottomDemog', name: 'scaleUnbalanced' },
@@ -431,6 +435,7 @@ export class ElectionUIController {
     document.getElementById('tabBtnMunicipios')?.addEventListener('click', () => this.switchTab('tabMunicipios'));
     document.getElementById('tabBtnDemografia')?.addEventListener('click', () => this.switchTab('tabDemografia'));
     document.getElementById('tabBtnMapa')?.addEventListener('click', () => this.switchTab('tabMapa'));
+    document.getElementById('tabBtnNoticias')?.addEventListener('click', () => this.switchTab('tabNoticias'));
 
     // Barra de abas inferior (celular)
     document.querySelectorAll('#appBottomNav [data-tab]').forEach(btn => {
@@ -927,7 +932,7 @@ export class ElectionUIController {
     if (!TAB_ORDER.includes(tabId)) tabId = 'tabUFs';
     const changed = tabId !== this._currentTab;
     this._currentTab = tabId;
-    ['tabUFs', 'tabMunicipios', 'tabDemografia', 'tabMapa'].forEach(t => {
+    TAB_ORDER.forEach(t => {
       const el = document.getElementById(t);
       if (el) el.classList.toggle('hidden', t !== tabId);
     });
@@ -935,14 +940,7 @@ export class ElectionUIController {
     // Fecha a gaveta (tablet e celular) se estiver aberta
     this._shell?.fecharGaveta(false);
 
-    const btnMap = {
-      tabUFs: 'tabBtnUFs',
-      tabMunicipios: 'tabBtnMunicipios',
-      tabDemografia: 'tabBtnDemografia',
-      tabMapa: 'tabBtnMapa'
-    };
-
-    Object.entries(btnMap).forEach(([t, btnId]) => {
+    Object.entries(TAB_BUTTONS).forEach(([t, btnId]) => {
       const b = document.getElementById(btnId);
       if (b) {
         if (t === tabId) {
@@ -968,6 +966,8 @@ export class ElectionUIController {
       this.renderDemogSection();
     } else if (tabId === 'tabMapa') {
       this.renderExpandedMap();
+    } else if (tabId === 'tabNoticias') {
+      this._noticias?.render();
     }
 
     // Scroll suave até o módulo selecionado para feedback visual imediato

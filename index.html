@@ -142,6 +142,12 @@
                             <span class="nav-label">Correlação Demográfica</span>
                         </span>
                     </button>
+                    <button id="tabBtnNoticias" type="button" class="sidebar-nav-item" role="tab" aria-controls="tabNoticias" aria-selected="false" tabindex="-1" title="Notícias e auditoria">
+                        <span class="nav-item-inner">
+                            <span class="nav-icon" id="iconTabNoticias"></span>
+                            <span class="nav-label">Notícias e auditoria</span>
+                        </span>
+                    </button>
                     <button id="tabBtnMapa" type="button" class="sidebar-nav-item" role="tab" aria-controls="tabMapa" aria-selected="false" tabindex="-1" title="Mapa do Brasil">
                         <span class="nav-item-inner">
                             <span class="nav-icon" id="iconTabMapa"></span>
@@ -832,6 +838,20 @@
             </div>
         </section>
 
+        <!-- ABA 5: NOTÍCIAS E AUDITORIA DA ELEIÇÃO -->
+        <section id="tabNoticias" role="tabpanel" aria-labelledby="tabBtnNoticias" class="hidden glass-panel rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow space-y-4 sm:space-y-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-borderDark pb-2.5 sm:pb-3">
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                        <span id="iconTabNoticiasHeader" class="text-emerald-400"></span>
+                        <span>Houve fraude? O que dizem os dados, os auditores e as checagens</span>
+                    </h3>
+                    <p class="text-[11px] sm:text-xs text-slate-400">Testes de integridade, observadores, checagens de notícias e auditoria estatística dos arquivos do TSE, com as fontes</p>
+                </div>
+            </div>
+            <div id="noticiasConteudo" class="noticias-conteudo"></div>
+        </section>
+
     </main>
     </div><!-- Fim do .app-content-area -->
     </div><!-- Fim do .app-main-layout -->
@@ -1054,6 +1074,10 @@
         <button type="button" class="bottom-nav-item" data-tab="tabDemografia">
             <span id="iconBottomDemog"></span>
             <span class="bottom-nav-label">Demografia</span>
+        </button>
+        <button type="button" class="bottom-nav-item" data-tab="tabNoticias">
+            <span id="iconBottomNoticias"></span>
+            <span class="bottom-nav-label">Notícias</span>
         </button>
         <button type="button" class="bottom-nav-item" data-tab="tabMapa">
             <span id="iconBottomMapa"></span>

@@ -39,6 +39,19 @@ npm test                   # testes com o executor nativo do Node (>= 20), sem d
 ```bash
 python3 scripts/build_tse_dataset.py   # CSVs do TSE -> data/tse_2026_presidente.json
 python3 scripts/build_app_data.py      # JSON + Censo -> src/infrastructure/data/*.js e data/provenance.json
+python3 scripts/build_auditoria.py     # CSVs do TSE -> src/infrastructure/data/AuditoriaData.js (aba Notícias)
 ```
+
+## Aba Notícias e auditoria
+
+Responde "houve fraude?" com três partes, todas com fonte:
+
+- **Quem verificou e o que concluiu** e **Alegações e o que se verificou**: conteúdo curado em `src/infrastructure/data/NoticiasData.js` (testes de integridade do TSE e dos TREs, TCU, MP Eleitoral, missão da OEA, análises dos logs e agências de checagem). Cada item exige ao menos uma fonte com link (`tests/noticias.test.js`).
+- **O caso contra o TSE**: o argumento mais forte da oposição, também em `NoticiasData.js`, separado em críticas à instituição com respaldo documental (prorrogação inédita, decisões individuais, moderação opaca, pouca auditabilidade pelo eleitor, dados republicados sem aviso) e alegações sobre a contagem sem respaldo. A conta "de onde vieram os votos ganhos no 2º turno" é calculada pelo script de auditoria (regressão por urna).
+- **Auditoria deste painel nos arquivos do TSE**: números gerados por `scripts/build_auditoria.py`, que lê os três arquivos de `data/tse_raw/`. Além dos dois já usados pelo painel, precisa do arquivo de votos por urna e candidato (1,5 GB, não versionado):
+  `https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_2026_BR.zip`
+  Os testes procuram contas que não fecham, comparecimento perto de 100%, boletins atrasados, efeito do modelo de urna, votações extremas, viradas atípicas (urna a urna), assinatura de enchimento (comparecimento × voto dentro do município) e divergência entre os arquivos. Anomalia estatística não é prova de fraude, e a aba diz isso.
+
+Ao atualizar as notícias, mude `atualizadoEm` em `NoticiasData.js`. Ao mudar módulos da aba, mantenha `sw.js` em dia (o teste de integridade cobra) e incremente `CACHE_VERSION`.
 
 Desenvolvido por Celso de Almeida Leite (Systekna).

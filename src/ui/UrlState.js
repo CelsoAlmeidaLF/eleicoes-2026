@@ -4,7 +4,7 @@
  * e o que for inválido cai no padrão. Valores padrão não aparecem no endereço.
  */
 
-const TABS = { ufs: 'tabUFs', municipios: 'tabMunicipios', demografia: 'tabDemografia', mapa: 'tabMapa' };
+const TABS = { ufs: 'tabUFs', municipios: 'tabMunicipios', demografia: 'tabDemografia', noticias: 'tabNoticias', mapa: 'tabMapa' };
 const TAB_SLUGS = Object.fromEntries(Object.entries(TABS).map(([slug, id]) => [id, slug]));
 
 const ALLOWED = {

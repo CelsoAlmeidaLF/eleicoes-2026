@@ -9,7 +9,7 @@
  * - Requisições para outros domínios não passam pelo cache (o app não faz nenhuma). Zero telemetria.
  * Ao mudar a lista do shell, incremente CACHE_VERSION.
  */
-const CACHE_VERSION = 'stk-gov-br-v7';
+const CACHE_VERSION = 'stk-gov-br-v8';
 
 const APP_SHELL = [
   './',
@@ -34,6 +34,9 @@ const APP_SHELL = [
   'src/Program.js',
   'src/ui/ElectionUIController.js',
   'src/ui/UrlState.js',
+  'src/ui/NoticiasView.js',
+  'src/infrastructure/data/NoticiasData.js',
+  'src/infrastructure/data/AuditoriaData.js',
   'src/application/services/ElectionAnalysisService.js',
   'src/application/services/ExportService.js',
   'src/domain/models/DemographicBands.js',

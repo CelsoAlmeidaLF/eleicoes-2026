@@ -1297,7 +1297,7 @@ tbody td.col-sticky-uf { color: var(--br-yellow-text); }
    Barra de abas embaixo, topo com área segura e botões só com ícone: vendor/stk-gov/stk-gov.css. */
 @media (max-width: 639px) {
   /* Ao trocar de aba, a seção não fica escondida atrás do topo fixo */
-  #tabUFs, #tabMunicipios, #tabDemografia, #tabMapa { scroll-margin-top: 116px; }
+  #tabUFs, #tabMunicipios, #tabDemografia, #tabNoticias, #tabMapa { scroll-margin-top: 116px; }
 
   .app-footer { margin-top: 24px; }
 }
@@ -1539,4 +1539,155 @@ tbody td.col-sticky-uf { color: var(--br-yellow-text); }
     min-height: 40px;
     font-size: 13px;
   }
+}
+
+/* ───────── ABA NOTÍCIAS E AUDITORIA ───────── */
+.noticias-conteudo { display: flex; flex-direction: column; gap: 16px; }
+
+.news-veredito {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border: 1px solid rgba(61, 214, 140, 0.35);
+  border-left: 3px solid var(--br-green-text);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, rgba(0, 156, 59, 0.14), rgba(0, 156, 59, 0.03));
+}
+.news-veredito strong { font-size: 1rem; color: #FFFFFF; }
+.news-veredito p { margin-top: 4px; font-size: 0.875rem; color: #D6D6D6; line-height: 1.55; }
+.news-veredito-icone { color: var(--br-green-text); flex-shrink: 0; margin-top: 2px; }
+.news-veredito-icone .stk-icon { width: 22px; height: 22px; }
+
+.news-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.news-kpi {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.news-kpi span { font-size: 0.75rem; color: var(--text-secondary); }
+.news-kpi strong { font-family: var(--mono); font-size: 1.25rem; color: #FFFFFF; font-weight: 600; }
+.news-kpi em { font-style: normal; font-size: 0.75rem; color: var(--text-tertiary); }
+
+.news-secao {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.9375rem; font-weight: 600; color: #FFFFFF;
+}
+.news-secao .stk-icon { color: var(--br-green-text); }
+.news-intro { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.55; }
+
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.news-card, .news-alegacao {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.news-card header, .news-alegacao header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.news-card h5, .news-alegacao h5 { font-size: 0.9375rem; font-weight: 600; color: #FFFFFF; line-height: 1.35; }
+.news-card p, .news-alegacao p { font-size: 0.8125rem; color: #C8C8C8; line-height: 1.55; }
+.news-tipo, .news-origem { font-size: 0.75rem; color: var(--text-tertiary); }
+.news-resultado strong { color: #FFFFFF; }
+
+.news-selo {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  font-size: 0.6875rem; font-weight: 600; white-space: nowrap;
+}
+.news-ok { color: var(--br-green-text); background: rgba(0, 156, 59, 0.16); border-color: rgba(61, 214, 140, 0.4); }
+.news-alerta { color: var(--br-yellow-text); background: rgba(255, 223, 0, 0.12); border-color: rgba(255, 212, 59, 0.4); }
+.news-falso { color: var(--down); background: rgba(224, 70, 78, 0.12); border-color: rgba(224, 70, 78, 0.4); }
+.news-neutro { color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); }
+
+.news-fontes { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border-subtle); }
+.news-fontes li { display: flex; flex-direction: column; font-size: 0.75rem; line-height: 1.4; }
+.news-fontes a { color: var(--br-green-text); text-decoration: underline; text-decoration-color: rgba(61, 214, 140, 0.35); text-underline-offset: 2px; overflow-wrap: anywhere; }
+.news-fontes a:hover { text-decoration-color: currentColor; }
+.news-fontes span { color: var(--text-tertiary); }
+
+.news-lista { display: flex; flex-direction: column; gap: 10px; }
+
+.news-testes { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
+.news-teste {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.news-teste h5 { font-size: 0.875rem; font-weight: 600; color: #FFFFFF; }
+.news-teste p { font-size: 0.8125rem; color: #C8C8C8; line-height: 1.5; margin-top: 2px; }
+.news-teste .news-procura { font-size: 0.75rem; color: var(--text-tertiary); }
+.news-teste-icone { display: inline-flex; padding: 6px; border-radius: 50%; border: 1px solid; flex-shrink: 0; }
+
+.news-tabela-wrap { overflow-x: auto; }
+.news-tabela { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.news-tabela th { text-align: left; font-weight: 600; color: #D6D6D6; padding: 6px 8px; border-bottom: 1px solid var(--border-default); }
+.news-tabela td { padding: 6px 8px; border-bottom: 1px solid var(--border-subtle); color: #D6D6D6; }
+.news-tabela .num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+.news-tabela-migracao { font-size: 0.75rem; }
+.news-tabela-migracao th, .news-tabela-migracao td { padding: 6px 6px; }
+
+.news-confira { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.news-confira-item {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+.news-confira-item:hover { border-color: var(--border-accent); background: #1C1C1C; }
+.news-confira-item strong { color: var(--br-green-text); font-size: 0.875rem; }
+.news-confira-item span { color: var(--text-secondary); font-size: 0.75rem; line-height: 1.45; }
+
+.news-origem-dados { font-size: 0.75rem; color: var(--text-tertiary); }
+.news-origem-dados summary { cursor: pointer; color: var(--text-secondary); }
+.news-origem-dados ul { margin: 8px 0 0 16px; display: flex; flex-direction: column; gap: 4px; }
+.news-origem-dados a { color: var(--br-green-text); }
+.news-origem-dados code { font-family: var(--mono); }
+
+.news-caso { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.news-coluna { display: flex; flex-direction: column; gap: 10px; }
+.news-coluna-titulo { padding: 8px 12px; border: 1px solid; border-radius: var(--radius-lg); font-size: 0.875rem; font-weight: 600; }
+.news-veredito-neutro { border-color: var(--border-default); border-left-color: var(--br-yellow-text); background: linear-gradient(90deg, rgba(255, 223, 0, 0.08), rgba(255, 223, 0, 0.02)); }
+.news-veredito-neutro .news-veredito-icone { color: var(--br-yellow-text); }
+
+/* Duas colunas só quando cabem (com a barra lateral aberta, abaixo de 1280 px ficam estreitas) */
+@media (max-width: 1279px) {
+  .news-caso { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 1023px) {
+  .news-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 639px) {
+  .news-veredito { padding: 14px; }
+  .news-grid, .news-testes, .news-confira { grid-template-columns: 1fr; }
+  .news-kpi strong { font-size: 1.0625rem; }
+  /* Tabela das zonas atípicas vira lista */
+  .news-tabela thead { display: none; }
+  .news-tabela, .news-tabela tbody, .news-tabela tr { display: block; width: 100%; }
+  .news-tabela tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 8px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+  .news-tabela .num { text-align: left; white-space: normal; }
+  .news-tabela td { border: 0; padding: 0; }
+  .news-tabela td:first-child { grid-column: 1 / -1; font-weight: 600; color: #FFFFFF; }
+  .news-tabela td:nth-child(2)::before { content: 'Virada '; color: var(--text-tertiary); font-family: var(--sans); }
+  .news-tabela td:nth-child(3) { display: none; }
+  .news-tabela td:nth-child(4)::before { content: 'Mesma direção '; color: var(--text-tertiary); font-family: var(--sans); }
+  .news-tabela-migracao td:nth-child(2)::before { content: '1º turno '; color: var(--text-tertiary); font-family: var(--sans); }
+  .news-tabela-migracao td:nth-child(3) { display: block; }
+  .news-tabela-migracao td:nth-child(3)::before { content: 'Lula '; color: var(--text-tertiary); font-family: var(--sans); }
+  .news-tabela-migracao td:nth-child(4)::before { content: 'Flávio '; color: var(--text-tertiary); font-family: var(--sans); }
+  .news-tabela-migracao tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
