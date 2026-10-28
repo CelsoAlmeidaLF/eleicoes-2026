@@ -2107,3 +2107,130 @@ tbody td.col-sticky-uf { color: var(--br-yellow-text); }
   z-index: 1;
   background: var(--surface-elevated);
 }
+
+/* Rodapé da tabela municipal: contador + "Mostrar mais" */
+.muni-table-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ───────── TABELAS COMO LISTA NO CELULAR (até 639px) ─────────
+   Cada linha vira um cartão; cada coluna vira "rótulo: valor" (rótulo em data-label, preenchido
+   pelo JS a partir do cabeçalho). O cabeçalho vira uma faixa rolável de botões de ordenação. */
+@media (max-width: 639px) {
+  .overflow-x-auto:has(> .table-stack) {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .muni-table-scroll { max-height: none; overflow: visible; }
+
+  .table-stack,
+  .table-stack tbody {
+    display: block;
+    width: 100%;
+    white-space: normal;
+    background: transparent;
+  }
+
+  /* Cabeçalho: só as colunas ordenáveis, como pílulas roláveis */
+  .table-stack thead {
+    display: block;
+    background: transparent;
+    border: 0;
+  }
+  .table-stack thead tr {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 10px;
+    scrollbar-width: none;
+  }
+  .table-stack thead tr::-webkit-scrollbar { display: none; }
+  .table-stack thead th {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border: 1px solid var(--border-default);
+    border-radius: 999px;
+    background: var(--surface-inset);
+    white-space: nowrap;
+    text-transform: none;
+    font-size: 12px;
+  }
+  .table-stack thead th:not(.th-sortable) { display: none; }
+
+  /* Linha = cartão */
+  .table-stack tbody tr {
+    display: flex;
+    flex-direction: column;
+    margin: 0 0 10px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+  .table-stack tbody tr:hover { background: var(--surface); }
+
+  /* Célula = "rótulo ........ valor" */
+  .table-stack td,
+  .table-stack td.col-sticky-uf,
+  .table-stack td.col-sticky-name {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    column-gap: 6px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding: 8px 0 !important;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    background: transparent;
+    text-align: right;
+    font-size: 13px;
+  }
+  .table-stack tbody tr:hover td { background: transparent; }
+  .table-stack td > .mx-1 { margin: 0; }
+  .table-stack td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 55%;
+    margin-right: auto;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+  .table-stack td:last-child { border-bottom: 0; }
+
+  /* Título do cartão (nome da UF / município) sobe para o topo, sem rótulo */
+  .table-stack td.cell-title {
+    order: -1;
+    justify-content: flex-start;
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .table-stack td.cell-title::before { display: none; }
+
+  /* Ações: botão na largura do cartão, sem rótulo */
+  .table-stack td.cell-action { padding-top: 10px; }
+  .table-stack td.cell-action::before { display: none; }
+  .table-stack td.cell-action > button {
+    width: 100%;
+    min-height: 40px;
+    font-size: 13px;
+  }
+}

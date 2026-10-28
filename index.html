@@ -478,7 +478,7 @@
 
             <!-- Tabela Responsiva com Scroll -->
             <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
-                <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                <table class="table-stack w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
                     <thead
                         class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
                         <tr>
@@ -558,7 +558,7 @@
             </div>
 
             <div id="muniTableScroll" class="overflow-x-auto custom-scroll border border-borderDark rounded-lg muni-table-scroll">
-                <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                <table class="table-stack w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
                     <thead
                         class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
                         <tr>
@@ -592,7 +592,10 @@
                     <tbody id="muniTableBody" class="divide-y divide-borderDark/60 bg-cardDark/40"></tbody>
                 </table>
             </div>
-            <p id="muniTableCounter" class="text-[11px] text-slate-400 font-mono"></p>
+            <div class="muni-table-footer">
+                <p id="muniTableCounter" class="text-[11px] text-slate-400 font-mono"></p>
+                <button id="btnMuniMore" type="button" class="filter-chip" hidden>Mostrar mais</button>
+            </div>
 
             <!-- Ranking de participação: abstenção e brancos+nulos por município, cruzado com a faixa demográfica -->
             <div class="participation-panel">
@@ -623,7 +626,7 @@
                 </div>
                 <div id="participationBands" class="participation-bands"></div>
                 <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
-                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                    <table class="table-stack w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
                         <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark">
                             <tr>
                                 <th class="px-3 py-2.5 text-right">#</th>
@@ -723,7 +726,7 @@
                     <span class="text-xs text-slate-400 font-mono" id="demogTableCounter">27 UFs</span>
                 </div>
                 <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
-                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                    <table class="table-stack w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
                         <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark sticky top-0">
                             <tr>
                                 <th data-sort-demog="uf" class="th-sortable col-sticky-uf px-3.5 py-2.5">
@@ -1017,7 +1020,7 @@
             <div class="space-y-2">
                 <h5 class="text-xs font-bold text-white" id="mmZonesTitle">Zonas eleitorais</h5>
                 <div class="overflow-x-auto custom-scroll border border-borderDark rounded-lg">
-                    <table class="w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
+                    <table class="table-stack w-full text-xs text-left text-slate-300 font-mono whitespace-nowrap">
                         <thead class="text-[10px] uppercase bg-panelDark text-slate-400 border-b border-borderDark">
                             <tr>
                                 <th class="px-3 py-2">Zona</th>

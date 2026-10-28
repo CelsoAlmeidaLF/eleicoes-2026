@@ -3,11 +3,26 @@ import { escapeHtml as esc } from '../infrastructure/lib/escapeHtml.js';
 import { UF_RATIO_BANDS, MUNI_RATIO_BANDS } from '../domain/models/DemographicBands.js';
 import { parseUrlState, serializeUrlState } from './UrlState.js';
 
-const MUNI_ROW_LIMIT = 300;
+// Linhas da tabela municipal por página: no celular cada linha vira um cartão, então a página é menor
+const MUNI_PAGE = { desktop: 300, mobile: 50 };
+const isMobileLayout = () => window.matchMedia('(max-width: 639px)').matches;
 const fmtInt = n => n.toLocaleString('pt-BR');
 const fmtPct = (n, d = 2) => `${n.toFixed(d).replace('.', ',')}%`;
 const listUFs = ufs => (ufs.length ? ufs.join(', ') : 'nenhuma');
 const setText = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+
+/**
+ * No celular as tabelas viram lista de cartões (CSS .table-stack): cada célula recebe o nome
+ * da coluna em data-label, lido do cabeçalho, para aparecer como "rótulo: valor"
+ */
+const labelTableCells = tbody => {
+  const head = tbody?.closest('table')?.tHead?.rows[0];
+  if (!head) return;
+  const labels = [...head.cells].map(th => th.textContent.replace(/\s+/g, ' ').trim());
+  for (const row of tbody.rows) {
+    [...row.cells].forEach((td, i) => { td.dataset.label = labels[i] ?? ''; });
+  }
+};
 const withCount = (label, n) => `${label} (${fmtInt(n)})`;
 // Intervalo legível de cada faixa demográfica, a partir dos limites do domínio
 const bandRanges = b => ({ ALTA: `≥${b.high}%`, JOVEM: `<${b.low}%`, TIPICA: `${b.low}% a <${b.high}%` });
@@ -605,6 +620,7 @@ export class ElectionUIController {
       this.closeModal();
     });
     document.getElementById('btnExportMuniCsv')?.addEventListener('click', () => this.exportMuniCsv());
+    document.getElementById('btnMuniMore')?.addEventListener('click', () => this.renderMuniTable({ more: true }));
 
     // Ranking de participação
     ['ABSTENCAO', 'NAO_NOMINAL'].forEach(metric => {
@@ -1131,7 +1147,7 @@ export class ElectionUIController {
       tr.className = 'table-row-hover';
       tr.innerHTML = `
         <td class="col-sticky-uf px-2 sm:px-3 py-2 sm:py-2.5 font-bold text-amber-400">${esc(st.uf)}</td>
-        <td class="col-sticky-name px-2.5 sm:px-4 py-2 sm:py-2.5 text-white font-medium font-sans">
+        <td class="col-sticky-name cell-title px-2.5 sm:px-4 py-2 sm:py-2.5 text-white font-medium font-sans">
           <span class="cell-inline">${esc(st.name)}${st.virada ? '<span class="badge-status badge-virada">Virou 2ºT</span>' : ''}</span>
         </td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-slate-400 text-[11px]">${esc(st.region)}</td>
@@ -1155,7 +1171,7 @@ export class ElectionUIController {
           <span class="text-[10px] text-slate-500 ml-1">(${st.nonVotersPct.toFixed(1).replace('.', ',')}%)</span>
         </td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-right font-mono text-purple-300">${ratio}%</td>
-        <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-center">
+        <td class="cell-action px-2.5 sm:px-4 py-2 sm:py-2.5 text-center">
           <button data-uf="${esc(st.uf)}" class="btn-open-modal px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-sans font-medium transition">
             Detalhes
           </button>
@@ -1164,12 +1180,18 @@ export class ElectionUIController {
       tbody.appendChild(tr);
     });
 
+    labelTableCells(tbody);
+
     tbody.querySelectorAll('.btn-open-modal').forEach(btn => {
       btn.addEventListener('click', () => this.openStateModal(btn.dataset.uf));
     });
   }
 
-  renderMuniTable() {
+  /**
+   * @param {{ more?: boolean }} [opts] more = acrescenta uma página ("Mostrar mais"); qualquer outra
+   *   mudança (filtro, busca, ordenação, turno) volta para a primeira página
+   */
+  renderMuniTable({ more = false } = {}) {
     const tbody = document.getElementById('muniTableBody');
     if (!tbody) return;
 
@@ -1190,14 +1212,20 @@ export class ElectionUIController {
 
     tbody.innerHTML = '';
 
-    const counter = document.getElementById('muniTableCounter');
-    if (counter) {
-      counter.textContent = munis.length > MUNI_ROW_LIMIT
-        ? `Exibindo ${MUNI_ROW_LIMIT} de ${fmtInt(munis.length)} municípios. Use a busca ou os filtros para refinar.`
-        : `${fmtInt(munis.length)} município${munis.length === 1 ? '' : 's'}`;
+    const page = isMobileLayout() ? MUNI_PAGE.mobile : MUNI_PAGE.desktop;
+    this._muniLimit = more ? (this._muniLimit ?? page) + page : page;
+    const shown = Math.min(this._muniLimit, munis.length);
+
+    setText('muniTableCounter', munis.length > shown
+      ? `Exibindo ${fmtInt(shown)} de ${fmtInt(munis.length)} municípios. Use a busca ou os filtros para refinar.`
+      : `${fmtInt(munis.length)} município${munis.length === 1 ? '' : 's'}`);
+    const btnMore = document.getElementById('btnMuniMore');
+    if (btnMore) {
+      btnMore.hidden = munis.length <= shown;
+      btnMore.textContent = `Mostrar mais ${fmtInt(Math.min(page, munis.length - shown))}`;
     }
 
-    munis.slice(0, MUNI_ROW_LIMIT).forEach(m => {
+    munis.slice(0, shown).forEach(m => {
       const winner = m.getWinner(turn);
       const isPT = winner === 'PT';
       const ratio = m.ratioElecPop === null ? '—' : fmtPct(m.ratioElecPop);
@@ -1206,7 +1234,7 @@ export class ElectionUIController {
       const tr = document.createElement('tr');
       tr.className = 'table-row-hover';
       tr.innerHTML = `
-        <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 font-bold text-white">
+        <td class="cell-title px-2.5 sm:px-4 py-2 sm:py-2.5 font-bold text-white">
           <span class="cell-inline">${esc(m.name)}${m.virada ? '<span class="badge-status badge-virada">Virou 2ºT</span>' : ''}</span>
         </td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-amber-400 font-bold">${esc(m.uf)}</td>
@@ -1222,7 +1250,7 @@ export class ElectionUIController {
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-right text-slate-400">${pop}</td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-right font-mono text-purple-300">${ratio}</td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-center text-slate-400 text-[11px]">${esc(m.profileType)}</td>
-        <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-center">
+        <td class="cell-action px-2.5 sm:px-4 py-2 sm:py-2.5 text-center">
           <button type="button" data-tse="${esc(m.tse)}" class="px-2.5 py-1 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-sans font-medium transition" aria-label="Ver zonas eleitorais de ${esc(m.name)}">
             Ver zonas
           </button>
@@ -1230,6 +1258,7 @@ export class ElectionUIController {
       `;
       tbody.appendChild(tr);
     });
+    labelTableCells(tbody);
   }
 
   /**
@@ -1299,7 +1328,7 @@ export class ElectionUIController {
       tr.className = 'table-row-hover';
       tr.innerHTML = `
         <td class="col-sticky-uf px-2 sm:px-3 py-2 sm:py-2.5 font-bold text-amber-400">${esc(st.uf)}</td>
-        <td class="col-sticky-name px-2.5 sm:px-4 py-2 sm:py-2.5 text-white font-medium font-sans">${esc(st.name)}</td>
+        <td class="col-sticky-name cell-title px-2.5 sm:px-4 py-2 sm:py-2.5 text-white font-medium font-sans">${esc(st.name)}</td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-slate-400 text-[11px]">${esc(st.region)}</td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-right text-slate-300">${st.elec.toLocaleString('pt-BR')}</td>
         <td class="px-2.5 sm:px-4 py-2 sm:py-2.5 text-right text-slate-400">${st.pop.toLocaleString('pt-BR')}</td>
@@ -1312,6 +1341,7 @@ export class ElectionUIController {
       `;
       tbody.appendChild(tr);
     });
+    labelTableCells(tbody);
   }
 
   openStateModal(uf) {
@@ -1442,13 +1472,14 @@ export class ElectionUIController {
       const m = row.municipality;
       return `<tr class="table-row-hover">
         <td class="px-3 py-2 text-right text-slate-500">${i + 1}</td>
-        <td class="px-3 py-2 font-bold text-white font-sans">${esc(m.name)}</td>
+        <td class="cell-title px-3 py-2 font-bold text-white font-sans">${esc(m.name)}</td>
         <td class="px-3 py-2 text-amber-400 font-bold">${esc(m.uf)}</td>
         <td class="px-3 py-2 text-slate-400">${esc(bandNames[m.band] ?? 'Sem Censo')}</td>
         <td class="px-3 py-2 text-right">${fmtInt(m.elec)}</td>
         <td class="px-3 py-2 text-right font-bold text-amber-300">${fmtPct(row.pct)}</td>
       </tr>`;
     }).join('');
+    labelTableCells(tbody);
     setText('participationCounter', `${fmtInt(r.top.length)} de ${fmtInt(r.eligible)} municípios elegíveis no filtro.`);
   }
 
@@ -1507,6 +1538,7 @@ export class ElectionUIController {
           </tr>`;
         }).join('');
       }
+      labelTableCells(body);
       setText('mmZonesStatus', zones.length === 1
         ? '1 zona eleitoral atende este município.'
         : `${fmtInt(zones.length)} zonas eleitorais atendem este município.`);
