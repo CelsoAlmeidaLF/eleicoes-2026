@@ -55,7 +55,10 @@ Conteúdo curado em `src/infrastructure/data/NoticiasData.js`; números gerados 
 ```bash
 python3 scripts/build_auditoria.py         # CSVs do TSE -> AuditoriaData.js (estatística dos resultados)
 python3 scripts/build_auditoria_urnas.py   # boletins e logs -> AuditoriaUrnasData.js (precisa do 7z)
+python3 scripts/verificar_dossie.py        # confere as alegações do "Relatório Pericial Independente" (só lê, ~1 min)
 ```
+
+`verificar_dossie.py` compara cada seção com ela mesma no 1º turno: horário de encerramento, eleitores sem biometria, Benford, seções com 100% para um candidato e se o ganho de Lula cabe nos votos disponíveis em cada seção. A margem nos boletins (4.566.361) é maior que a oficial porque o TSE não publicou os boletins de Roraima.
 
 Arquivos brutos em `data/tse_raw/` (não versionados): `detalhe_votacao_secao_2026_BR.csv`, `votacao_candidato_munzona_2026_BR.csv`, `votacao_secao_2026_BR.csv` (zip `votacao_secao/votacao_secao_2026_BR.zip`), `bweb_2t/` (boletins de urna do 2º turno, do conjunto "Resultados - 2026 - Boletim de Urna") e `logs_2t/` (zips `arqurnatot/bu_imgbu_logjez_rdv_vscmr_2026_2t_UF.zip` dos estados auditados e logs avulsos de `resultados.tse.jus.br`).
 
