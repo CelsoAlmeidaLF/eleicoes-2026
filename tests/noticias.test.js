@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { NOTICIAS } from '../src/infrastructure/data/NoticiasData.js';
 import { AUDITORIA } from '../src/infrastructure/data/AuditoriaData.js';
+import { AUDITORIA_URNAS } from '../src/infrastructure/data/AuditoriaUrnasData.js';
 import { NoticiasView } from '../src/ui/NoticiasView.js';
 import { parseUrlState, serializeUrlState, DEFAULT_URL_STATE } from '../src/ui/UrlState.js';
 
@@ -18,6 +19,7 @@ const todasAsFontes = () => [
   ...NOTICIAS.casoContraTse.comRespaldo.flatMap(c => c.fontes),
   ...NOTICIAS.casoContraTse.semRespaldo.flatMap(c => c.fontes)
 ];
+const todosOsLinks = () => [...todasAsFontes(), ...NOTICIAS.confira, ...NOTICIAS.guia.filter(p => p.url).map(p => ({ titulo: p.passo, url: p.url }))];
 
 test('notícias: toda verificação e toda alegação tem resultado e ao menos uma fonte', () => {
   for (const v of NOTICIAS.verificacoes) {
@@ -33,7 +35,7 @@ test('notícias: toda verificação e toda alegação tem resultado e ao menos u
 });
 
 test('notícias: fontes com título, veículo e link http(s); datas no formato dd/mm/aaaa', () => {
-  for (const f of [...todasAsFontes(), ...NOTICIAS.confira]) {
+  for (const f of todosOsLinks()) {
     assert.match(f.url, /^https?:\/\/[^\s]+$/, f.titulo);
     assert.ok(f.titulo, f.url);
     if ('veiculo' in f) assert.ok(f.veiculo, f.url);
@@ -99,4 +101,26 @@ test('migração de votos entre turnos: a conta fecha com os dados do TSE', () =
   const raiz = { innerHTML: '' };
   new NoticiasView(NOTICIAS, AUDITORIA).render(raiz);
   assert.ok(raiz.innerHTML.includes('O caso contra o TSE') && raiz.innerHTML.includes('De onde'));
+});
+
+test('notícias: nenhum link aparece com dois títulos diferentes (sinal de endereço trocado ou inventado)', () => {
+  const porUrl = new Map();
+  for (const f of todasAsFontes()) {
+    const anterior = porUrl.get(f.url);
+    assert.ok(!anterior || anterior === f.titulo, `${f.url}: "${anterior}" x "${f.titulo}"`);
+    porUrl.set(f.url, f.titulo);
+  }
+});
+
+test('boletins e logs: números coerentes e a aba mostra os testes das urnas', () => {
+  const { boletins: b, logs: l, urnas: u } = AUDITORIA_URNAS;
+  assert.ok(b.urnasComparadas > 400_000 && b.urnasComDiferenca === 0, 'boletim x totalização sem diferença');
+  assert.equal(l.logIgualAoOficial + l.logDiferente, l.urnas);
+  assert.equal(l.diferentesComLogAMais, 0, 'nenhum log com mais votos que o oficial');
+  assert.ok(u.semBiometria.pct > 0 && u.semBiometria.pct < 100);
+  const raiz = { innerHTML: '' };
+  const view = new NoticiasView(NOTICIAS, AUDITORIA, AUDITORIA_URNAS);
+  view.render(raiz);
+  assert.equal(view.testesUrnas().length, 6);
+  assert.ok(raiz.innerHTML.includes('Boletins e logs das urnas') && raiz.innerHTML.includes('verifique você mesmo'));
 });

@@ -14,6 +14,7 @@ import { StkGovShell } from '../vendor/stk-gov/stk-gov-shell.js';
 import { NoticiasView } from './ui/NoticiasView.js';
 import { NOTICIAS } from './infrastructure/data/NoticiasData.js';
 import { AUDITORIA } from './infrastructure/data/AuditoriaData.js';
+import { AUDITORIA_URNAS } from './infrastructure/data/AuditoriaUrnasData.js';
 
 export class Program {
   static main() {
@@ -33,7 +34,7 @@ export class Program {
       // Shell comum dos projetos 8.X; as abas continuam com o controlador (URL, teclado, renderização)
       const shell = new StkGovShell({ app: 'painel2026', gerenciarAbas: false, chaveRecolhida: 'stk_sidebar_collapsed' });
       shell.iniciar();
-      const noticiasView = new NoticiasView(NOTICIAS, AUDITORIA);
+      const noticiasView = new NoticiasView(NOTICIAS, AUDITORIA, AUDITORIA_URNAS);
       const uiController = new ElectionUIController(analysisService, exportService, chartAdapter, mapAdapter, pwaAdapter, shell, noticiasView);
 
       // 4. Inicialização do Ciclo de Vida

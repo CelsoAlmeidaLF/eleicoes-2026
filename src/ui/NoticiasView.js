@@ -2,8 +2,9 @@ import { getIcon } from '../infrastructure/icons/Icons.js';
 import { escapeHtml as esc } from '../infrastructure/lib/escapeHtml.js';
 
 /**
- * Aba "Notícias": quem verificou a eleição, alegações checadas e a auditoria estatística
- * dos arquivos do TSE feita por este painel. Só monta HTML a partir dos dados recebidos;
+ * Aba "Notícias": para o leitor que desconfia do TSE. Começa pelo que procede nas críticas ao tribunal,
+ * mostra o que os arquivos das urnas dizem (boletins, logs e auditoria estatística), quem verificou,
+ * as alegações checadas e um guia para conferir sozinho. Só monta HTML a partir dos dados recebidos;
  * todo texto passa por escapeHtml e só entram links http(s).
  */
 
@@ -16,9 +17,9 @@ const titulo = s => s.toLowerCase().replace(/(^|\s|-)(\p{L})/gu, (_, a, b) => a 
 const STATUS = {
   ok: { classe: 'news-ok', rotulo: 'Sem fraude encontrada' },
   critica: { classe: 'news-alerta', rotulo: 'Sem fraude; crítica ao procedimento' },
-  falso: { classe: 'news-falso', rotulo: 'Falso' },
-  'sem-prova': { classe: 'news-falso', rotulo: 'Sem prova' },
-  parcial: { classe: 'news-alerta', rotulo: 'Em parte verdadeiro' },
+  falso: { classe: 'news-falso', rotulo: 'Não se sustenta nos dados' },
+  'sem-prova': { classe: 'news-falso', rotulo: 'Sem prova apresentada' },
+  parcial: { classe: 'news-alerta', rotulo: 'Procede em parte' },
   pendente: { classe: 'news-neutro', rotulo: 'Pendente' }
 };
 
@@ -35,10 +36,12 @@ export class NoticiasView {
   /**
    * @param {Object} noticias NOTICIAS (NoticiasData.js)
    * @param {Object} auditoria AUDITORIA (AuditoriaData.js)
+   * @param {Object} [urnas] AUDITORIA_URNAS (AuditoriaUrnasData.js): boletins e logs das urnas
    */
-  constructor(noticias, auditoria) {
+  constructor(noticias, auditoria, urnas = null) {
     this.n = noticias;
     this.a = auditoria;
+    this.u = urnas;
     this._renderizado = false;
   }
 
@@ -46,12 +49,15 @@ export class NoticiasView {
   render(raiz = document.getElementById('noticiasConteudo')) {
     if (!raiz || this._renderizado) return;
     raiz.innerHTML = [
+      this._apresentacao(),
       this._resumo(),
-      this._verificacoes(),
-      this._alegacoes(),
       this._casoContraTse(),
+      this._boletinsELogs(),
       this._auditoria(),
       this._pontosDeAtencao(),
+      this._verificacoes(),
+      this._alegacoes(),
+      this._guia(),
       this._confira(),
       this._rodape()
     ].join('');
@@ -87,21 +93,84 @@ export class NoticiasView {
     ];
   }
 
+  _apresentacao() {
+    const ap = this.n.apresentacao;
+    if (!ap) return '';
+    return `
+      <div class="news-apresentacao">
+        <strong>${esc(ap.titulo)}</strong>
+        <p>${esc(ap.texto)}</p>
+      </div>`;
+  }
+
   _resumo() {
     const a = this.a;
+    const b = this.u?.boletins;
     return `
       <div class="news-veredito">
         <span class="news-veredito-icone">${getIcon('checkCircle')}</span>
         <div>
-          <strong>Apuração oficial e cobertura da imprensa independente.</strong>
-          <p>Testes de integridade, fiscalização partidária, apurações da imprensa independente (Revista Oeste, Gazeta do Povo e Jovem Pan News) e a auditoria estatística deste painel indicam que a soma dos boletins de urna (BUs) impressos bate com a totalização: Lula reeleito por ${fmtInt(a.margem2)} votos. As críticas centrais documentadas pela oposição focam em arbitrariedades institucionais: a prorrogação inédita da votação até as 19h por decisão monocrática, o cerco à liberdade de expressão e a recusa histórica ao voto impresso auditável.</p>
+          <strong>O problema está na conduta do tribunal, não na contagem dos votos.</strong>
+          <p>As críticas documentadas da oposição se sustentam: a prorrogação inédita da votação até as 19h por decisão individual, a moderação de conteúdo sem transparência e a recusa ao voto impresso. Mas os arquivos das próprias urnas não mostram fraude: ${b ? `o boletim impresso em cada seção bate voto a voto com o resultado oficial em ${fmtInt(b.urnasComparadas)} urnas` : 'a soma dos boletins de urna bate com a totalização'}, e Lula foi reeleito por ${fmtInt(a.margem2)} votos. Testes de integridade, observadores e auditorias independentes de código aberto chegam ao mesmo número.</p>
         </div>
       </div>
       <div class="news-kpis">
         <div class="news-kpi"><span>Margem no 2º turno</span><strong>${fmtInt(a.margem2)}</strong><em>votos</em></div>
-        <div class="news-kpi"><span>Urnas auditadas</span><strong>${fmtInt(a.t2.urnas)}</strong><em>por turno, uma a uma</em></div>
+        <div class="news-kpi"><span>Boletins × resultado oficial</span><strong>${b ? fmtInt(b.urnasComDiferenca) : '0'}</strong><em>diferenças${b ? ` em ${fmtInt(b.urnasComparadas)} urnas` : ''}</em></div>
         <div class="news-kpi"><span>Divergências nos testes de integridade</span><strong>0</strong><em>nos dois turnos</em></div>
         <div class="news-kpi"><span>Votos após as 17h</span><strong>~34 mil</strong><em>&lt; 1% da margem</em></div>
+      </div>`;
+  }
+
+  /** Testes nos arquivos da própria urna: [teste, o que procura, resultado, ok?] */
+  testesUrnas() {
+    const u = this.u;
+    if (!u) return [];
+    const b = u.boletins, m = u.urnas, l = u.logs;
+    return [
+      ['Boletim impresso × resultado oficial', 'Votos alterados depois de saírem da urna, na transmissão ou na totalização',
+        `${fmtInt(b.urnasComparadas)} urnas comparadas voto a voto: ${fmtInt(b.urnasComDiferenca)} diferenças, nenhuma urna sobrando ou faltando. O TSE não publicou os boletins do 2º turno de ${b.ufsSemBoletim.join(', ') || 'nenhuma UF'}.`, b.urnasComDiferenca === 0],
+      ['Voto sem eleitor liberado', '"Urna votando sozinha": voto computado sem o mesário ter habilitado um eleitor',
+        `Logs de ${fmtInt(l.urnas)} urnas (${l.ufs.join(' e ')} inteiros), ${fmtInt(l.votos)} votos: ${fmtInt(l.votosSemEleitorHabilitado)} votos sem habilitação.`, l.votosSemEleitorHabilitado === 0],
+      ['Rajada de votos', 'Votos fabricados em sequência rápida demais para uma pessoa real',
+        `${fmtInt(l.paresMenosDe15s)} pares de votos com menos de 15 segundos; o menor intervalo foi ${l.menorIntervaloSeg} s, o típico ${l.intervaloMedianoSeg} s.`, l.paresMenosDe15s === 0],
+      ['Log da urna × resultado oficial', 'Resultado com mais votos que os registrados na urna',
+        `${fmtInt(l.logIgualAoOficial)} iguais. Nas ${l.logDiferente} restantes houve troca de urna no meio do dia (registrada no log); os votos antes da troca vêm da memória da urna substituída.`, l.diferentesComLogAMais === 0 && l.diferentesComTrocaDeUrna === l.logDiferente],
+      ['Eleitores sem biometria', 'Votos liberados por código, sem digital, favorecendo um candidato',
+        `${fmtNum(m.semBiometria.pct, 2)}% dos votantes foram liberados sem biometria. Dentro do mesmo município, isso não tem relação com o voto em Lula (correlação ${fmtNum(m.semBiometria.correlacaoComLulaNoMunicipio, 3)}).`, Math.abs(m.semBiometria.correlacaoComLulaNoMunicipio) < 0.1],
+      ['Horários da urna', 'Urna aberta antes da hora ou boletim emitido antes do fim da votação',
+        `${m.aberturaAntesDas7h} urnas abertas antes das 7h e ${m.boletimAntesDoEncerramento} boletins emitidos antes do encerramento. ${fmtInt(m.encerradasDepoisDas19h05)} urnas fecharam depois das 19h05, quase todas pouco depois, com fila.`, m.aberturaAntesDas7h === 0 && m.boletimAntesDoEncerramento === 0]
+    ];
+  }
+
+  _boletinsELogs() {
+    if (!this.u) return '';
+    const casos = this.u.casos.map(c => `
+      <article class="news-alegacao">
+        <header>${selo('ok', 'Explicado')}<span class="news-origem">${esc(c.municipio)} (${esc(c.uf)}), zona ${esc(c.zona)}, seção ${esc(c.secao)}</span></header>
+        <h5>Urna encerrada às ${esc(c.encerramento || '?')}</h5>
+        <p>O log da urna original mostra ${fmtInt(c.votosNaUrnaOriginal)} votos entre ${esc(c.primeiroVoto || '?')} e ${esc(c.ultimoVoto || '?')}, todos com eleitor habilitado (${fmtInt(c.votosSemHabilitacao)} sem habilitação), iguais aos ${fmtInt(c.comparecimentoOficial)} do resultado oficial. A impressora falhou no fim do dia; à noite, uma urna de contingência recuperou os votos da memória para emitir o boletim, sem nenhum voto novo.</p>
+      </article>`).join('');
+    const cargas = this.u.urnas.carregadasNoDia;
+    return `
+      <h4 class="news-secao">${getIcon('database')} Boletins e logs das urnas (2º turno)</h4>
+      <p class="news-intro">O boletim é impresso e assinado pela própria urna na seção, na frente dos fiscais; o log registra cada passo do eleitor. São os arquivos mais próximos do voto: se alguém tivesse mexido na contagem, a diferença apareceria aqui.</p>
+      <div class="news-testes">${this.testesUrnas().map(([t, procura, resultado, ok]) => `
+        <div class="news-teste">
+          <span class="news-teste-icone ${ok ? 'news-ok' : 'news-alerta'}">${getIcon(ok ? 'checkCircle' : 'alertTriangle')}</span>
+          <div>
+            <h5>${esc(t)}</h5>
+            <p class="news-procura">Procura: ${esc(procura)}</p>
+            <p>${esc(resultado)}</p>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div class="news-lista">${casos}
+        <article class="news-alegacao">
+          <header>${selo('ok', 'Explicado')}<span class="news-origem">${cargas.length} urnas</span></header>
+          <h5>Urnas carregadas no dia da eleição</h5>
+          <p>${cargas.map(c => `${esc(c.municipio)} (${esc(c.uf)}): carga às ${esc(c.carga)}, abertura às ${esc(c.abertura || '?')}, Lula ${fmtInt(c.lula)} × Flávio ${fmtInt(c.flavio)}`).join('; ')}. São urnas preparadas no dia para substituir equipamentos com defeito, abertas no meio da manhã, com votação normal para cada lugar.</p>
+        </article>
       </div>`;
   }
 
@@ -121,7 +190,7 @@ export class NoticiasView {
 
   _alegacoes() {
     return `
-      <h4 class="news-secao">${getIcon('alertTriangle')} Alegações e o que se verificou</h4>
+      <h4 class="news-secao">${getIcon('alertTriangle')} Outras alegações e o que se verificou</h4>
       <div class="news-lista">${this.n.alegacoes.map(x => `
         <article class="news-alegacao">
           <header>${selo(x.veredito, x.rotulo)}<span class="news-origem">${esc(x.origem)}</span></header>
@@ -152,22 +221,22 @@ export class NoticiasView {
     const c = this.n.casoContraTse;
     const item = (x, ok) => `
       <article class="news-alegacao">
-        <header>${selo(ok ? 'parcial' : 'falso', ok ? 'Tem respaldo' : 'Sem respaldo')}</header>
+        <header>${selo(ok ? 'parcial' : 'falso', ok ? 'Procede' : 'Não se sustenta nos dados')}</header>
         <h5>${esc(x.titulo)}</h5>
         <p>${esc(x.explicacao)}</p>
         ${x.migracao ? this._migracao() : ''}
         ${fontesHtml(x.fontes)}
       </article>`;
     return `
-      <h4 class="news-secao">${getIcon('scaleUnbalanced')} O caso contra o TSE</h4>
-      <p class="news-intro">O argumento mais forte da oposição, com as fontes, separado em duas partes: críticas à instituição e alegações sobre a contagem dos votos.</p>
+      <h4 class="news-secao">${getIcon('scaleUnbalanced')} O caso contra o TSE: o que procede e o que não se sustenta</h4>
+      <p class="news-intro">O argumento da oposição, com as fontes, separado em duas partes: a conduta do tribunal e a contagem dos votos.</p>
       <div class="news-caso">
         <div class="news-coluna">
-          <h5 class="news-coluna-titulo news-alerta">Críticas ao TSE como instituição: têm respaldo</h5>
+          <h5 class="news-coluna-titulo news-alerta">Procede: críticas ao TSE como poder</h5>
           ${c.comRespaldo.map(x => item(x, true)).join('')}
         </div>
         <div class="news-coluna">
-          <h5 class="news-coluna-titulo news-falso">Fraude na contagem dos votos: sem respaldo</h5>
+          <h5 class="news-coluna-titulo news-falso">Não se sustenta nos dados: fraude na contagem</h5>
           ${c.semRespaldo.map(x => item(x, false)).join('')}
         </div>
       </div>
@@ -179,7 +248,7 @@ export class NoticiasView {
 
   _auditoria() {
     return `
-      <h4 class="news-secao">${getIcon('database')} Auditoria deste painel nos arquivos do TSE</h4>
+      <h4 class="news-secao">${getIcon('chartColumn')} Auditoria estatística dos resultados (dois turnos)</h4>
       <p class="news-intro">Testes estatísticos rodados nos arquivos oficiais, urna por urna e candidato por candidato. Anomalia estatística não é prova de fraude; fraude se comprova com boletim de urna, log ou perícia.</p>
       <div class="news-testes">${this.testes().map(([t, procura, resultado, ok]) => `
         <div class="news-teste">
@@ -227,9 +296,23 @@ export class NoticiasView {
       </div>`;
   }
 
+  _guia() {
+    const g = this.n.guia;
+    if (!g?.length) return '';
+    return `
+      <h4 class="news-secao">${getIcon('search')} Não confie: verifique você mesmo</h4>
+      <ol class="news-guia">${g.map(p => `
+        <li>
+          <strong>${esc(p.passo)}</strong>
+          <p>${esc(p.texto)}</p>
+          ${p.url ? `<a href="${esc(linkSeguro(p.url))}" target="_blank" rel="noopener noreferrer">${esc(p.url.replace(/^https?:\/\//, ''))}</a>` : ''}
+        </li>`).join('')}
+      </ol>`;
+  }
+
   _confira() {
     return `
-      <h4 class="news-secao">${getIcon('externalLink')} Confira você mesmo</h4>
+      <h4 class="news-secao">${getIcon('externalLink')} Onde acompanhar</h4>
       <div class="news-confira">${this.n.confira.map(c => `
         <a class="news-confira-item" href="${esc(linkSeguro(c.url))}" target="_blank" rel="noopener noreferrer">
           <strong>${esc(c.titulo)}</strong><span>${esc(c.descricao)}</span>
@@ -246,7 +329,7 @@ export class NoticiasView {
           <li><a href="${esc(linkSeguro(f.pacote))}" target="_blank" rel="noopener noreferrer">${esc(f.arquivo)}</a>
           · gerado pelo TSE em ${esc(f.geradoPeloTse)} · SHA-256 <code>${esc(f.sha256.slice(0, 16))}…</code></li>`).join('')}
         </ul>
-        <p>Gerado por <code>${esc(m.geradoPor)}</code>.</p>
+        <p>Gerado por <code>${esc(m.geradoPor)}</code>${this.u ? ` e <code>${esc(this.u.geradoPor)}</code> (boletins de urna e arquivos transmitidos para totalização do Portal de Dados Abertos do TSE)` : ''}.</p>
       </details>`;
   }
 }

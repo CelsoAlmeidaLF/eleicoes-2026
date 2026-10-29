@@ -44,14 +44,23 @@ python3 scripts/build_auditoria.py     # CSVs do TSE -> src/infrastructure/data/
 
 ## Aba Notícias e auditoria
 
-Responde "houve fraude?" com três partes, todas com fonte:
+Escrita para o leitor que desconfia do TSE, com a linha "não confie, verifique":
 
-- **Quem verificou e o que concluiu** e **Alegações e o que se verificou**: conteúdo curado em `src/infrastructure/data/NoticiasData.js` (testes de integridade do TSE e dos TREs, TCU, MP Eleitoral, missão da OEA, análises dos logs e agências de checagem). Cada item exige ao menos uma fonte com link (`tests/noticias.test.js`).
-- **O caso contra o TSE**: o argumento mais forte da oposição, também em `NoticiasData.js`, separado em críticas à instituição com respaldo documental (prorrogação inédita, decisões individuais, moderação opaca, pouca auditabilidade pelo eleitor, dados republicados sem aviso) e alegações sobre a contagem sem respaldo. A conta "de onde vieram os votos ganhos no 2º turno" é calculada pelo script de auditoria (regressão por urna).
-- **Auditoria deste painel nos arquivos do TSE**: números gerados por `scripts/build_auditoria.py`, que lê os três arquivos de `data/tse_raw/`. Além dos dois já usados pelo painel, precisa do arquivo de votos por urna e candidato (1,5 GB, não versionado):
-  `https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_2026_BR.zip`
-  Os testes procuram contas que não fecham, comparecimento perto de 100%, boletins atrasados, efeito do modelo de urna, votações extremas, viradas atípicas (urna a urna), assinatura de enchimento (comparecimento × voto dentro do município) e divergência entre os arquivos. Anomalia estatística não é prova de fraude, e a aba diz isso.
+1. **O que procede** nas críticas ao tribunal: prorrogação inédita até as 19h por decisão individual, decisões contraditórias, moderação de conteúdo sem transparência, ausência de voto impresso e arquivos republicados sem aviso.
+2. **O que os arquivos das urnas mostram**: boletim impresso em cada seção × resultado oficial (2º turno, todo o país), logs das urnas (voto sem eleitor habilitado, rajadas, horários), biometria, e a auditoria estatística dos dois turnos.
+3. **Quem verificou** (testes de integridade, código-fonte, OEA, auditorias independentes de código aberto), **outras alegações** (inclusive a posição dos EUA) e um **guia para o cidadão conferir sozinho**.
 
-Ao atualizar as notícias, mude `atualizadoEm` em `NoticiasData.js`. Ao mudar módulos da aba, mantenha `sw.js` em dia (o teste de integridade cobra) e incremente `CACHE_VERSION`.
+Conteúdo curado em `src/infrastructure/data/NoticiasData.js`; números gerados por script:
+
+```bash
+python3 scripts/build_auditoria.py         # CSVs do TSE -> AuditoriaData.js (estatística dos resultados)
+python3 scripts/build_auditoria_urnas.py   # boletins e logs -> AuditoriaUrnasData.js (precisa do 7z)
+```
+
+Arquivos brutos em `data/tse_raw/` (não versionados): `detalhe_votacao_secao_2026_BR.csv`, `votacao_candidato_munzona_2026_BR.csv`, `votacao_secao_2026_BR.csv` (zip `votacao_secao/votacao_secao_2026_BR.zip`), `bweb_2t/` (boletins de urna do 2º turno, do conjunto "Resultados - 2026 - Boletim de Urna") e `logs_2t/` (zips `arqurnatot/bu_imgbu_logjez_rdv_vscmr_2026_2t_UF.zip` dos estados auditados e logs avulsos de `resultados.tse.jus.br`).
+
+**Regra para as fontes:** cada item precisa de ao menos uma fonte, e todo link tem de abrir a matéria citada. Antes de publicar, abra os links novos (o teste não acessa a internet). Endereços inventados ou trocados derrubam a credibilidade da aba inteira: um leitor que clica e cai numa página vazia descarta o resto. Prefira veículos lidos pela direita (Gazeta do Povo, Revista Oeste) e documentos primários (TSE, OEA, repositórios de código aberto).
+
+Ao atualizar as notícias, mude `atualizadoEm`. Ao mudar módulos da aba, mantenha `sw.js` em dia (o teste de integridade cobra) e incremente `CACHE_VERSION`.
 
 Desenvolvido por Celso de Almeida Leite (Systekna).
