@@ -67,3 +67,7 @@ Arquivos brutos em `data/tse_raw/` (não versionados): `detalhe_votacao_secao_20
 Ao atualizar as notícias, mude `atualizadoEm`. Ao mudar módulos da aba, mantenha `sw.js` em dia (o teste de integridade cobra) e incremente `CACHE_VERSION`.
 
 Desenvolvido por Celso de Almeida Leite (Systekna).
+
+## Auditoria das urnas (outro app)
+
+O app **Auditoria das Urnas** (projeto `8.3. AUDITORIA-URNAS`) é separado e tem endereço próprio (`https://celsoalmeidalf.github.io/auditoria-urnas-2026/`). O painel leva o usuário até ele: no menu, o grupo "Auditoria das urnas" tem um botão para cada seção do app (Panorama das urnas, Abrir urna, Confira o seu voto, Eventos do log, Locais e zonas, Urnas de uma UF, Como ler o log), que abre o app direto na seção (`#aba=panorama`, `#aba=abrir`, `#aba=urna`, `#aba=eventos`, `#aba=locais`, `#aba=uf`, `#aba=guia`); botão "Auditar os logs das urnas deste município" e link "ver urnas" em cada zona (abrem o app em `#locais=UF/município/zona`), e o link na aba Notícias. Os endereços ficam em `src/ui/Ligacoes.js`.

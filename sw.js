@@ -9,7 +9,7 @@
  * - Requisições para outros domínios não passam pelo cache (o app não faz nenhuma). Zero telemetria.
  * Ao mudar a lista do shell, incremente CACHE_VERSION.
  */
-const CACHE_VERSION = 'stk-gov-br-v10';
+const CACHE_VERSION = 'stk-gov-br-v14';
 
 const APP_SHELL = [
   './',
@@ -35,6 +35,7 @@ const APP_SHELL = [
   'src/ui/ElectionUIController.js',
   'src/ui/UrlState.js',
   'src/ui/NoticiasView.js',
+  'src/ui/Ligacoes.js',
   'src/infrastructure/data/NoticiasData.js',
   'src/infrastructure/data/AuditoriaData.js',
   'src/infrastructure/data/AuditoriaUrnasData.js',
@@ -68,7 +69,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE_VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('stk-gov-br-') && k !== CACHE_VERSION).map(k => caches.delete(k)))) // só os caches deste app
       .then(() => self.clients.claim())
   );
 });

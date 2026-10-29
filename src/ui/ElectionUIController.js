@@ -2,6 +2,7 @@ import { getIcon } from '../infrastructure/icons/Icons.js';
 import { escapeHtml as esc } from '../infrastructure/lib/escapeHtml.js';
 import { UF_RATIO_BANDS, MUNI_RATIO_BANDS } from '../domain/models/DemographicBands.js';
 import { parseUrlState, serializeUrlState } from './UrlState.js';
+import { linkAuditoria } from './Ligacoes.js';
 
 // Linhas da tabela municipal por página: no celular cada linha vira um cartão, então a página é menor
 const MUNI_PAGE = { desktop: 300, mobile: 50 };
@@ -1475,6 +1476,9 @@ export class ElectionUIController {
       virada.classList.toggle('hidden', !m.virada);
       virada.textContent = m.virada ? `Este município inverteu o vencedor: ${m.winT1} no 1º turno, ${m.winner} no 2º.` : '';
     }
+    // Logs e boletins das urnas deste município no app Auditoria das Urnas (projeto 8.3)
+    const auditoria = document.getElementById('mmAuditoria');
+    if (auditoria) auditoria.href = linkAuditoria(m.tse);
     setText('mmZonesTitle', `Zonas eleitorais · ${turn}º turno`);
     document.getElementById('mmZonesBody')?.replaceChildren();
     setText('mmZonesStatus', 'Carregando zonas eleitorais...');
@@ -1499,6 +1503,7 @@ export class ElectionUIController {
             <td class="px-3 py-2 text-right">${fmtPct(z.getNaoNominalPct(turn), 1)}</td>
             <td class="px-3 py-2 text-center">${fmtPct(z.getLulaPct(turn), 1)} × ${fmtPct(z.getFlavioPct(turn), 1)}</td>
             <td class="px-3 py-2 text-center"><span class="badge-status ${w === 'PT' ? 'badge-pt' : 'badge-pl'}">${esc(w)}</span></td>
+            <td class="px-3 py-2 text-center"><a class="text-emerald-400 underline" href="${esc(linkAuditoria(m.tse, z.zona))}" title="Logs das urnas da zona ${z.zona} no app Auditoria das Urnas">ver urnas</a></td>
           </tr>`;
         }).join('');
       }

@@ -1,5 +1,6 @@
 import { getIcon } from '../infrastructure/icons/Icons.js';
 import { escapeHtml as esc } from '../infrastructure/lib/escapeHtml.js';
+import { AUDITORIA_URL } from './Ligacoes.js';
 
 /**
  * Aba "Notícias": para o leitor que desconfia do TSE. Começa pelo que procede nas críticas ao tribunal,
@@ -155,6 +156,7 @@ export class NoticiasView {
     return `
       <h4 class="news-secao">${getIcon('database')} Boletins e logs das urnas (2º turno)</h4>
       <p class="news-intro">O boletim é impresso e assinado pela própria urna na seção, na frente dos fiscais; o log registra cada passo do eleitor. São os arquivos mais próximos do voto: se alguém tivesse mexido na contagem, a diferença apareceria aqui.</p>
+      <p class="news-intro">Confira a urna da sua seção: o app <a href="${AUDITORIA_URL}">Auditoria das Urnas</a> abre o log, o boletim e o Registro Digital do Voto de qualquer seção, direto dos arquivos do TSE, e mostra o endereço de cada local de votação.</p>
       <div class="news-testes">${this.testesUrnas().map(([t, procura, resultado, ok]) => `
         <div class="news-teste">
           <span class="news-teste-icone ${ok ? 'news-ok' : 'news-alerta'}">${getIcon(ok ? 'checkCircle' : 'alertTriangle')}</span>

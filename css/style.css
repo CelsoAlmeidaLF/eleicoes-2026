@@ -1722,3 +1722,12 @@ tbody td.col-sticky-uf { color: var(--br-yellow-text); }
   .news-tabela-migracao td:nth-child(4)::before { content: 'Flávio '; color: var(--text-tertiary); font-family: var(--sans); }
   .news-tabela-migracao tr { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Grupo "Auditoria das urnas": botões que levam ao app de auditoria (outro endereço), direto na seção */
+.sidebar-grupo-auditoria { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+a.sidebar-nav-item { text-decoration: none; color: inherit; display: flex; }
+a.sidebar-nav-item .nav-item-inner { width: 100%; }
+.nav-externo { margin-left: auto; width: 14px !important; height: 14px !important; opacity: 0.55; flex-shrink: 0; }
+a.sidebar-nav-item:hover .nav-externo { opacity: 1; }
+/* Menu recolhido (só ícones): a seta e o título do grupo somem como os rótulos */
+.sidebar-collapsed .nav-externo { display: none; }
