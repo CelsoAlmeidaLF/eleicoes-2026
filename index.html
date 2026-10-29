@@ -1145,7 +1145,15 @@
             <span id="iconBottomMapa"></span>
             <span class="bottom-nav-label">Mapa</span>
         </button>
+        <!-- Celular: os botões da Auditoria das urnas (no menu lateral do computador) numa folha -->
+        <button type="button" class="bottom-nav-item" data-folha="folhaAuditoria">
+            <span><svg class="stk-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"></path><path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"></path><path d="M22 19H2"></path></svg></span>
+            <span class="bottom-nav-label">Urnas</span>
+        </button>
     </nav>
+    <div class="stk-folha" id="folhaAuditoria" role="menu" aria-label="Auditoria das urnas" data-copiar-de=".sidebar-grupo-auditoria + nav a">
+        <div class="stk-folha-titulo">Auditoria das urnas · abre o app de auditoria</div>
+    </div>
 
     <!-- Ponto de Entrada Canônico da Aplicação (Composition Root) -->
     <script type="module" src="src/Program.js" onerror="document.getElementById('appFatalError').hidden = false"></script>
